@@ -16,6 +16,7 @@ Where each part of the site lives and what it is for. No passwords or keys here:
 | Google sign-in | **Google Cloud** | project **Site Power BI**, OAuth client "Web client 1" | "Continue with Google". Audience **In production** (published Nov 5 2026). Branding: home/privacy/terms links on powerbiexercise.com. |
 | Analytics | **Google Analytics 4** | property *Power BI Exercises*, stream ID `16279005739`, Measurement ID `G-1PQHNQ4S2R` | Visits and page views, loaded only after cookie consent (`VITE_GA_ID`). Enhanced measurement off (we send page views ourselves). |
 | Search | **Google Search Console** | Domain property `powerbiexercise.com` (DNS TXT verified) | Indexing; sitemap `https://powerbiexercise.com/sitemap.xml` submitted (234 pages). |
+| SEO audit | **Ahrefs Webmaster Tools** (free) | project *Powerbiexercise*, imported from Search Console; weekly Site Audit | Health score 100 after the static-content fix (Nov 5 2026). IndexNow key `4148006c6e091ad1a7b3c8adc37781b8` (public file `/4148006c6e091ad1a7b3c8adc37781b8.txt`) for Bing/Yandex. |
 | Logo | **Google Flow** | project "Nov 05 - 11:20" | Treemap logo concepts; redrawn as SVG in `src/components/icons.tsx` + `public/favicon.svg`. |
 
 ## Still test-mode / to do before launch
