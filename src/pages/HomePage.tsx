@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Footer, Header } from '../components/Layout';
@@ -83,6 +84,9 @@ function PrimaryButton({ to, children, tone = 'green' }: { to: string; children:
 }
 
 export default function HomePage() {
+  useEffect(() => {
+    document.title = 'Power BI Practice Exercises Online: Learn Power BI and DAX by Doing';
+  }, []);
   const first = EXERCISES[0];
   const start = `/exercise/${first.id}`;
 

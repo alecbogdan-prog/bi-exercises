@@ -5,28 +5,59 @@ import { createServer, defineConfig, loadEnv, type Plugin } from 'vite'
 
 const SITE_URL = (process.env.SITE_URL ?? 'https://powerbiexercise.com').replace(/\/$/, '')
 
-/** Writes sitemap.xml and robots.txt into the build, listing every page from src/lib/sitemapPaths.ts. */
+interface PageMeta { path: string; title: string; description: string }
+
+const escHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+
+/** Puts one page's title, description and canonical URL into the built index.html. */
+function withMeta(html: string, page: PageMeta): string {
+  const url = SITE_URL + (page.path === '/' ? '/' : encodeURI(page.path))
+  const t = escHtml(page.title)
+  const d = escHtml(page.description)
+  return html
+    .replace(/<title>[\s\S]*?<\/title>/, `<title>${t}</title>`)
+    .replace(/<meta name="description" content="[^"]*"\s*\/?>/, `<meta name="description" content="${d}" />`)
+    .replace(/<meta property="og:title" content="[^"]*"\s*\/?>/, `<meta property="og:title" content="${t}" />`)
+    .replace(/<meta property="og:description" content="[^"]*"\s*\/?>/, `<meta property="og:description" content="${d}" />`)
+    .replace('</head>', `    <link rel="canonical" href="${url}" />\n    <meta property="og:url" content="${url}" />\n  </head>`)
+}
+
+/**
+ * At build time: writes sitemap.xml and robots.txt, and one index.html per page (e.g. exercises/index.html)
+ * with that page's own title and description, so search engines get them without running JavaScript.
+ * The page list lives in src/lib/sitemapPaths.ts.
+ */
 function sitemap(): Plugin {
   return {
     name: 'sitemap',
     apply: 'build',
-    async generateBundle() {
+    // Run after Vite has emitted index.html, so it can be copied per page.
+    enforce: 'post',
+    async generateBundle(_options, bundle) {
       const server = await createServer({ configFile: false, appType: 'custom', logLevel: 'error', server: { middlewareMode: true, hmr: false } })
-      let paths: string[]
+      let pages: PageMeta[]
       try {
-        const mod = (await server.ssrLoadModule('/src/lib/sitemapPaths.ts')) as { sitemapPaths: () => string[] }
-        paths = mod.sitemapPaths()
+        const mod = (await server.ssrLoadModule('/src/lib/sitemapPaths.ts')) as { pageMeta: () => PageMeta[] }
+        pages = mod.pageMeta()
       } finally {
         await server.close()
       }
       const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;')
-      const urls = paths.map((p) => `  <url><loc>${esc(SITE_URL + encodeURI(p))}</loc></url>`).join('\n')
+      const urls = pages.map((p) => `  <url><loc>${esc(SITE_URL + encodeURI(p.path))}</loc></url>`).join('\n')
       this.emitFile({
         type: 'asset',
         fileName: 'sitemap.xml',
         source: `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>\n`,
       })
       this.emitFile({ type: 'asset', fileName: 'robots.txt', source: `User-agent: *\nAllow: /\n\nSitemap: ${SITE_URL}/sitemap.xml\n` })
+
+      const index = bundle['index.html']
+      if (!index || index.type !== 'asset') return
+      const html = String(index.source)
+      for (const page of pages) {
+        if (page.path === '/') index.source = withMeta(html, page)
+        else this.emitFile({ type: 'asset', fileName: `${decodeURI(page.path).slice(1)}/index.html`, source: withMeta(html, page) })
+      }
     },
   }
 }
