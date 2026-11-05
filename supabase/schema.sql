@@ -19,6 +19,12 @@ create index if not exists entitlements_customer_idx on public.entitlements (str
 
 alter table public.entitlements enable row level security;
 
+-- Needed when "Automatically expose new tables" is off: signed-in users may read (RLS limits it to their own row),
+-- and the server's service role may write. Anonymous visitors get nothing.
+revoke all on public.entitlements from anon, authenticated;
+grant select on public.entitlements to authenticated;
+grant all on public.entitlements to service_role;
+
 -- Signed-in users can read their own row. Only the server (service role, from the Stripe webhook) writes.
 drop policy if exists "read own entitlement" on public.entitlements;
 create policy "read own entitlement" on public.entitlements
