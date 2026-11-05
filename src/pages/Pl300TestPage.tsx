@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Footer, Header } from '../components/Layout';
 import { LockIcon } from '../components/ProLock';
 import { ProgressBar } from '../components/Progress';
-import { hasPro } from '../lib/access';
+import { hasPl300 } from '../lib/access';
 import { BRAND } from '../lib/base';
 import { saveScore } from '../pl300/scores';
 import { DOMAINS, PASS_MARK, TESTS, isCorrect, questionById } from '../pl300/questions';
@@ -30,7 +30,7 @@ export default function Pl300TestPage() {
   const { testId = '' } = useParams();
   const test = TESTS.find((t) => t.id === testId);
   if (!test) return <Pl300Page />;
-  if (!test.free && !hasPro()) return <LockedTest title={test.title} />;
+  if (!test.free && !hasPl300()) return <LockedTest title={test.title} />;
   return <TestRunner key={test.id} testId={test.id} />;
 }
 

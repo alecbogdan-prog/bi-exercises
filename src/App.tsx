@@ -11,11 +11,15 @@ import ProjectsPage from './pages/ProjectsPage';
 import ProjectPage from './pages/ProjectPage';
 import Pl300TestPage from './pages/Pl300TestPage';
 import LegalPage from './pages/LegalPage';
+import AccountPage from './pages/AccountPage';
+import { useAccount } from './lib/account';
 
 // Hosts that serve a single page (e.g. a claude.ai preview) need hash-based routing.
 const Router = import.meta.env.VITE_HASH_ROUTER ? HashRouter : BrowserRouter;
 
 export default function App() {
+  // Re-render every page when the visitor logs in/out or their plan changes, so locks update at once.
+  useAccount();
   return (
     <Router>
       <Routes>
@@ -31,6 +35,7 @@ export default function App() {
         <Route path="/pl300/:testId" element={<Pl300TestPage />} />
         <Route path="/signup" element={<AuthPage mode="signup" />} />
         <Route path="/login" element={<AuthPage mode="login" />} />
+        <Route path="/account" element={<AccountPage />} />
         <Route path="/terms" element={<LegalPage kind="terms" />} />
         <Route path="/privacy" element={<LegalPage kind="privacy" />} />
         <Route path="*" element={<HomePage />} />

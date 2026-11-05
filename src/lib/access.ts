@@ -1,19 +1,27 @@
 import { EXERCISES } from '../exercises/exercises';
 import type { Exercise } from '../exercises/types';
+import { currentPlan } from './account';
 
 export { FREE_PER_CHAPTER } from '../exercises/exercises';
 
-/**
- * Whether the visitor has Pro. Accounts and payments are not live yet, so nobody has Pro in a build.
- * On the dev server, `localStorage['pbx:pro'] = '1'` unlocks everything for testing.
- */
-export function hasPro(): boolean {
+/** Dev-server override for testing: `localStorage['pbx:pro'] = '1'` unlocks everything. */
+function devOverride(): boolean {
   if (!import.meta.env.DEV) return false;
   try {
     return localStorage.getItem('pbx:pro') === '1';
   } catch {
     return false;
   }
+}
+
+/** Whether the visitor has Pro (every exercise, project and practice test). */
+export function hasPro(): boolean {
+  return devOverride() || currentPlan() === 'pro';
+}
+
+/** Whether the visitor can take every PL-300 practice test (Pro, or the PL-300 Prep pass). */
+export function hasPl300(): boolean {
+  return hasPro() || currentPlan() === 'pl300';
 }
 
 export const canOpen = (ex: Exercise): boolean => ex.free || hasPro();

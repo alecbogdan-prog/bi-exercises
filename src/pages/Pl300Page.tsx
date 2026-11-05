@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Footer, Header } from '../components/Layout';
 import { LockIcon } from '../components/ProLock';
-import { hasPro } from '../lib/access';
+import { hasPl300 } from '../lib/access';
 import { BRAND } from '../lib/base';
 import { bestScore } from '../pl300/scores';
 import { DOMAINS, PASS_MARK, QUESTIONS, TESTS } from '../pl300/questions';
@@ -35,7 +35,7 @@ export default function Pl300Page() {
         <section className="mx-auto max-w-5xl px-4 py-12">
           <div className="grid gap-4 md:grid-cols-2">
             {TESTS.map((t) => {
-              const locked = !t.free && !hasPro();
+              const locked = !t.free && !hasPl300();
               const best = bestScore(t.id);
               return (
                 <div key={t.id} className="flex min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm" data-testid={`card-${t.id}`}>

@@ -1,24 +1,62 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Footer, Header } from '../components/Layout';
 import { completedIds } from '../lib/storage';
 import { BRAND } from '../lib/base';
+import { useAccount } from '../lib/account';
+import { accountsEnabled, supabase } from '../lib/supabase';
 
-/** Sign-up and log-in screens. Accounts are not live yet, so submitting explains that instead of pretending. */
+/** Only follow same-site paths after log-in, never another domain. */
+function safeNext(raw: string | null): string {
+  return raw && raw.startsWith('/') && !raw.startsWith('//') ? raw : '/account';
+}
+
+/**
+ * Sign-up and log-in. Accounts are passwordless: we email a one-click sign-in link, or use Google.
+ * Without Supabase keys in the build, submitting explains that accounts are coming soon.
+ */
 export default function AuthPage({ mode }: { mode: 'signup' | 'login' }) {
-  const [sent, setSent] = useState(false);
+  const [params] = useSearchParams();
+  const navigate = useNavigate();
+  const account = useAccount();
+  const [email, setEmail] = useState('');
+  const [status, setStatus] = useState<'idle' | 'sending' | 'sent' | 'soon'>('idle');
+  const [error, setError] = useState<string | null>(null);
   const signup = mode === 'signup';
   const solved = completedIds().length;
+  const next = safeNext(params.get('next'));
+  const query = params.get('next') ? `?next=${encodeURIComponent(next)}` : '';
 
   useEffect(() => {
     document.title = `${signup ? 'Create your free account' : 'Log in'} | ${BRAND}`;
-    setSent(false);
+    setStatus('idle');
+    setError(null);
   }, [signup]);
 
-  const submit = (e: FormEvent) => {
+  // Already signed in (or just came back from the email link / Google): continue.
+  useEffect(() => {
+    if (account.ready && account.email) navigate(next, { replace: true });
+  }, [account.ready, account.email, next, navigate]);
+
+  const redirectTo = `${window.location.origin}${next}`;
+
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
-    setSent(true);
+    if (!supabase) return setStatus('soon');
+    setStatus('sending');
+    setError(null);
+    const { error: err } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: redirectTo } });
+    if (err) {
+      setError(err.message);
+      setStatus('idle');
+    } else setStatus('sent');
+  };
+
+  const google = async () => {
+    if (!supabase) return setStatus('soon');
+    const { error: err } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo } });
+    if (err) setError(err.message);
   };
 
   return (
@@ -35,7 +73,7 @@ export default function AuthPage({ mode }: { mode: 'signup' | 'login' }) {
               : 'Log in to continue where you left off.'}
           </p>
 
-          {sent ? (
+          {status === 'soon' ? (
             <div className="mt-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="status" data-testid="accounts-soon">
               <div className="font-semibold">Accounts are launching soon</div>
               <p className="mt-1">
@@ -45,9 +83,19 @@ export default function AuthPage({ mode }: { mode: 'signup' | 'login' }) {
                 </Link>
               </p>
             </div>
+          ) : status === 'sent' ? (
+            <div className="mt-6 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900" role="status" data-testid="link-sent">
+              <div className="font-semibold">Check your email</div>
+              <p className="mt-1">
+                We sent a sign-in link to <strong>{email}</strong>. Open it on this device to continue. It can take a minute; check your spam folder too.
+              </p>
+              <button type="button" onClick={() => setStatus('idle')} className="mt-2 font-semibold underline">
+                Use a different email
+              </button>
+            </div>
           ) : (
-            <form onSubmit={submit} className="mt-6 space-y-3">
-              <button type="button" onClick={() => setSent(true)} className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 font-semibold text-ink hover:border-slate-400">
+            <form onSubmit={(e) => void submit(e)} className="mt-6 space-y-3">
+              <button type="button" onClick={() => void google()} className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 font-semibold text-ink hover:border-slate-400">
                 <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
                   <path fill="#4285F4" d="M22.5 12.3c0-.8-.1-1.5-.2-2.2H12v4.2h5.9a5 5 0 0 1-2.2 3.3v2.7h3.5c2.1-1.9 3.3-4.7 3.3-8z" />
                   <path fill="#34A853" d="M12 23c3 0 5.4-1 7.2-2.7l-3.5-2.7c-1 .7-2.2 1.1-3.7 1.1-2.9 0-5.3-1.9-6.2-4.5H2.2v2.8A11 11 0 0 0 12 23z" />
@@ -63,15 +111,24 @@ export default function AuthPage({ mode }: { mode: 'signup' | 'login' }) {
               </div>
               <label className="block text-sm font-medium text-ink">
                 Email
-                <input type="email" required autoComplete="email" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-brand-500" />
+                <input
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-brand-500"
+                />
               </label>
-              <label className="block text-sm font-medium text-ink">
-                Password
-                <input type="password" required minLength={8} autoComplete={signup ? 'new-password' : 'current-password'} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 outline-none focus:border-brand-500" />
-              </label>
-              <button type="submit" className="w-full rounded-lg bg-brand-500 px-4 py-2.5 font-semibold text-white shadow-sm hover:bg-brand-600">
-                {signup ? 'Create free account' : 'Log in'}
+              {error && (
+                <p role="alert" className="text-sm text-red-700">
+                  {error}
+                </p>
+              )}
+              <button type="submit" disabled={status === 'sending'} className="w-full rounded-lg bg-brand-500 px-4 py-2.5 font-semibold text-white shadow-sm hover:bg-brand-600 disabled:opacity-60">
+                {status === 'sending' ? 'Sending…' : 'Email me a sign-in link'}
               </button>
+              {accountsEnabled && <p className="text-center text-xs text-slate-500">No password needed. We email you a link that signs you in.</p>}
             </form>
           )}
 
@@ -79,14 +136,14 @@ export default function AuthPage({ mode }: { mode: 'signup' | 'login' }) {
             {signup ? (
               <>
                 Already have an account?{' '}
-                <Link to="/login" className="font-semibold text-brand-700 hover:underline">
+                <Link to={`/login${query}`} className="font-semibold text-brand-700 hover:underline">
                   Log in
                 </Link>
               </>
             ) : (
               <>
                 New here?{' '}
-                <Link to="/signup" className="font-semibold text-brand-700 hover:underline">
+                <Link to={`/signup${query}`} className="font-semibold text-brand-700 hover:underline">
                   Create a free account
                 </Link>
               </>
