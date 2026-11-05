@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Figtree", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Bricolage Grotesque", "Figtree", ui-sans-serif, system-ui, sans-serif;
+  /* Yellow: highlights and the big band (always with dark text) */
+  --color-sunrise-400: #f7d64a;
+  --color-sunrise-500: #f2c811;
+  --color-sunrise-600: #c9a400;
+  /* Pale warm background for light bands */
+  --color-mint: #fff8e0;
+  --color-cream: #fffbf0;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Orange: the main brand color (buttons, checks, progress) */
+  --color-brand-50: #fff4e6;
+  --color-brand-100: #ffe6c7;
+  --color-brand-200: #ffcf91;
+  --color-brand-500: #e07b00;
+  --color-brand-600: #c26a00;
+  --color-brand-700: #8f4e00;
+  --color-ink: #14212b;
+
+  /* Desktop app look (Fluent-style neutrals) */
+  --font-segoe: "Segoe UI", "Segoe UI Web (West European)", -apple-system, BlinkMacSystemFont, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --color-d-canvas: #eaeaea;
+  --color-d-ribbon: #f3f2f1;
+  --color-d-border: #e1dfdd;
+  --color-d-strong: #c8c6c4;
+  --color-d-hover: #edebe9;
+  --color-d-pressed: #e1dfdd;
+  --color-d-text: #252423;
+  --color-d-sub: #605e5c;
+  --color-d-faint: #a19f9d;
+  --color-d-accent: #0f6cbd;
+  --color-d-title: #1f1f1f;
+}
+
+.desktop {
+  font-family: var(--font-segoe);
+  color: var(--color-d-text);
+  font-size: 12px;
+}
+.desktop button:disabled { cursor: default; }
+
+/* Toggle switch used in the Format pane */
+.switch { position: relative; width: 36px; height: 18px; border-radius: 9px; border: 1px solid #605e5c; background: #fff; transition: background .15s; flex-shrink: 0; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 10px; height: 10px; border-radius: 50%; background: #605e5c; transition: transform .15s; }
+.switch[aria-checked="true"] { background: #0f6cbd; border-color: #0f6cbd; }
+.switch[aria-checked="true"]::after { transform: translateX(18px); background: #fff; }
+
+html, body, #root { height: 100%; }
+body { background: #f6f7f9; color: var(--color-ink); }
+
+.lesson code, .task code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: #eef2f5;
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+/* Marching dashes on the drag arrow of a hint. */
+@keyframes hint-dash {
+  to {
+    stroke-dashoffset: -26;
+  }
+}
+.hint-dash {
+  animation: hint-dash 0.9s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hint-dash {
+    animation: none;
+  }
+}
