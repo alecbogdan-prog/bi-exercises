@@ -3,6 +3,7 @@ import { completedIds } from '../lib/storage';
 import { PROJECTS } from '../projects/projects';
 import { LockIcon } from './ProLock';
 import { ProgressBar } from './Progress';
+import { hasPro } from '../lib/access';
 
 /** One card per end-to-end project, with the learner's progress. */
 export function ProjectCards() {
@@ -20,7 +21,7 @@ export function ProjectCards() {
           >
             <div className="flex items-start justify-between gap-2">
               <h3 className="font-display text-xl font-extrabold tracking-tight text-ink uppercase group-hover:text-brand-700">{p.title}</h3>
-              {p.free ? (
+              {hasPro() ? null : p.free ? (
                 <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-600">FREE</span>
               ) : (
                 <span className="flex shrink-0 items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-semibold text-amber-800">

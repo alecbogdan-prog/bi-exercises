@@ -21,7 +21,7 @@ import { awardPoints, clearWork, completedIds, loadWork, markCompleted, saveWork
 import { pointsFor } from '../lib/points';
 import { ChapterProgress, StatsChip, SuccessBar } from '../components/Progress';
 import { LockedEditor, ProUnlockCard } from '../components/ProLock';
-import { canOpen } from '../lib/access';
+import { canOpen, hasPro } from '../lib/access';
 import { HintSpotlight } from '../components/HintSpotlight';
 import type { LessonStatus } from '../components/Progress';
 
@@ -229,7 +229,7 @@ function ExerciseView({ ex }: { ex: Exercise }) {
                 </Link>
                 <span>·</span>
                 <span>{ex.level}</span>
-                {!ex.free && <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">PRO</span>}
+                {!ex.free && !hasPro() && <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">PRO</span>}
                 {solved && <span className="rounded bg-brand-100 px-1.5 py-0.5 text-[10px] font-semibold text-brand-700">✓ Solved</span>}
                 <span className="flex-1" />
                 <button onClick={() => setPanelOpen(false)} className="hidden rounded px-1.5 text-slate-400 hover:bg-slate-100 hover:text-ink lg:block" title="Hide the exercise panel">

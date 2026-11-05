@@ -6,6 +6,7 @@ import { DAX_CATEGORIES, DAX_FUNCTIONS, argumentsOf, exercisesByFunction, functi
 import { EXERCISES } from '../exercises/exercises';
 import { BRAND } from '../lib/base';
 import DaxFunctionsPage from './DaxFunctionsPage';
+import { hasPro } from '../lib/access';
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
@@ -106,7 +107,7 @@ export default function DaxFunctionPage() {
                       <Link to={`/exercise/${e.id}`} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-ink hover:border-brand-500">
                         <span className="min-w-0 truncate">{e.title}</span>
                         <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-slate-500">
-                          {e.free ? <span className="rounded bg-slate-100 px-1.5 py-0.5 font-semibold text-slate-600">FREE</span> : <LockIcon className="h-3 w-3 text-amber-700" />}
+                          {hasPro() ? null : e.free ? <span className="rounded bg-slate-100 px-1.5 py-0.5 font-semibold text-slate-600">FREE</span> : <LockIcon className="h-3 w-3 text-amber-700" />}
                           {e.level}
                         </span>
                       </Link>

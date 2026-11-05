@@ -6,6 +6,7 @@ import { completedIds, startedIds, stats } from '../lib/storage';
 import { ProgressBar } from '../components/Progress';
 import { LockIcon } from '../components/ProLock';
 import { ProjectCards } from '../components/ProjectCards';
+import { hasPro } from '../lib/access';
 
 export function ExerciseList() {
   const done = new Set(completedIds());
@@ -76,7 +77,7 @@ export function ExerciseList() {
                       <span className="rounded bg-brand-100 px-1.5 py-0.5 font-semibold text-brand-700">✓ Solved</span>
                     ) : started.has(e.id) ? (
                       <span className="rounded bg-amber-100 px-1.5 py-0.5 font-semibold text-amber-800">IN PROGRESS</span>
-                    ) : e.free ? (
+                    ) : hasPro() ? null : e.free ? (
                       <span className="rounded bg-slate-100 px-1.5 py-0.5 font-semibold text-slate-600">FREE</span>
                     ) : (
                       <span className="flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 font-semibold text-amber-800">
@@ -105,9 +106,6 @@ export default function ExercisesPage() {
           Every exercise runs in your browser on a realistic sales model (Sales, Product, Customer and Date tables). Your answer is checked instantly. Progress is saved on this device.
         </p>
         <ExerciseList />
-        <p className="mt-10 rounded-lg bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-200">
-          Preview build: PRO exercises are unlocked for now. Power Query, data modeling and PL-300 practice tests are coming next.
-        </p>
       </main>
       <Footer />
     </div>

@@ -53,7 +53,7 @@ function ProjectView({ project: p }: { project: Project }) {
               </Link>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <h1 className="font-display text-4xl font-extrabold tracking-tight text-ink sm:text-5xl">{p.title}</h1>
-                {p.free ? (
+                {hasPro() ? null : p.free ? (
                   <span className="rounded bg-white px-2 py-0.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">FREE</span>
                 ) : (
                   <span className="flex items-center gap-1 rounded bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-800">

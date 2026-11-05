@@ -41,7 +41,7 @@ export default function Pl300Page() {
                 <div key={t.id} className="flex min-w-0 flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-sm" data-testid={`card-${t.id}`}>
                   <div className="flex items-center gap-2">
                     <h2 className="font-display text-2xl font-extrabold tracking-tight text-ink">{t.title}</h2>
-                    {t.free ? (
+                    {hasPl300() ? null : t.free ? (
                       <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-semibold text-slate-600">FREE</span>
                     ) : (
                       <span className="flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-semibold text-amber-800">
