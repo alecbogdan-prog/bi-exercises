@@ -7,7 +7,9 @@ set -euo pipefail
 MODE=()
 [[ "${1:-}" == "--live" ]] && MODE=(--live)
 
-product() { stripe products create ${MODE[@]+"${MODE[@]}"} --name "$1" --description "$2" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])'; }
+# Tax code: Training Services - Self-study Web-based (eligible for Stripe Managed Payments).
+TAX_CODE=txcd_20060058
+product() { stripe products create ${MODE[@]+"${MODE[@]}"} --name "$1" --description "$2" -d "tax_code=$TAX_CODE" | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])'; }
 
 PRO=$(product "Power BI Exercises Pro" "Every exercise, project and PL-300 practice test")
 stripe prices create ${MODE[@]+"${MODE[@]}"} --product "$PRO" --currency usd --unit-amount 7900 -d "recurring[interval]=year" --lookup-key pro_yearly --nickname "Pro yearly" >/dev/null

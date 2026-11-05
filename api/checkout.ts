@@ -26,6 +26,8 @@ export async function POST(req: Request): Promise<Response> {
     client_reference_id: user.id,
     metadata,
     allow_promotion_codes: true,
+    // Stripe as merchant of record (handles VAT/sales tax, fraud and disputes). On in production, off in the test sandbox.
+    ...(process.env.STRIPE_MANAGED_PAYMENTS === '1' ? { managed_payments: { enabled: true } } : {}),
     success_url: `${site}/account?checkout=success`,
     cancel_url: `${site}/pricing`,
     ...(current?.stripe_customer_id ? { customer: current.stripe_customer_id } : { customer_email: user.email }),
