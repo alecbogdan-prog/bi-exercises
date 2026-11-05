@@ -13,6 +13,8 @@ import Pl300TestPage from './pages/Pl300TestPage';
 import LegalPage from './pages/LegalPage';
 import AccountPage from './pages/AccountPage';
 import { useAccount } from './lib/account';
+// Registers progress sync with the account (copies progress to and from Supabase).
+import './lib/sync';
 import { CookieBanner, PageViews } from './components/CookieBanner';
 
 // Hosts that serve a single page (e.g. a claude.ai preview) need hash-based routing.

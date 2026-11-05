@@ -1,3 +1,4 @@
+import { progressChanged } from '../lib/sync';
 // Best practice-test scores, kept in this browser only.
 const KEY = 'pbx:pl300';
 
@@ -19,6 +20,7 @@ export function saveScore(testId: string, score: number): void {
   if (all[testId] === undefined || score > all[testId]) all[testId] = score;
   try {
     localStorage.setItem(KEY, JSON.stringify(all));
+    progressChanged();
   } catch {
     // Storage blocked: the score is just not remembered.
   }

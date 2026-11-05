@@ -3,6 +3,8 @@ import type { CalcColumn, Measure, Relationship } from '../engine/model';
 import type { Step } from '../engine/query';
 import type { VisualSpec } from '../engine/visual';
 
+import { progressChanged } from './sync';
+
 const PREFIX = 'biex:';
 
 function read<T>(key: string, fallback: T): T {
@@ -17,6 +19,7 @@ function read<T>(key: string, fallback: T): T {
 function write(key: string, value: unknown): void {
   try {
     localStorage.setItem(PREFIX + key, JSON.stringify(value));
+    progressChanged();
   } catch {
     /* storage unavailable (private mode etc.): progress is simply not saved */
   }
@@ -52,6 +55,7 @@ export function saveWork(id: string, work: SavedWork): void {
 export function clearWork(id: string): void {
   try {
     localStorage.removeItem(PREFIX + `work:${id}`);
+    progressChanged();
   } catch {
     /* ignore */
   }

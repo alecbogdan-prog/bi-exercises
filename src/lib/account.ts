@@ -16,6 +16,8 @@ export interface AccountState {
   ready: boolean;
   email: string | null;
   entitlement: Entitlement | null;
+  /** Bumped when progress synced from the account changes local data, so pages re-render. */
+  progressVersion: number;
 }
 
 // The last known entitlement is cached so paid pages open instantly on reload, before Supabase answers.
@@ -39,7 +41,17 @@ function writeCache(e: Entitlement | null): void {
   }
 }
 
-let state: AccountState = { ready: !supabase, email: null, entitlement: supabase ? readCache() : null };
+let state: AccountState = { ready: !supabase, email: null, entitlement: supabase ? readCache() : null, progressVersion: 0 };
+const sessionListeners = new Set<(userId: string | null) => void>();
+
+/** Called with the signed-in user's id (or null) whenever the session is checked. */
+export function onSession(cb: (userId: string | null) => void): void {
+  sessionListeners.add(cb);
+}
+
+export function bumpProgress(): void {
+  setState({ progressVersion: state.progressVersion + 1 });
+}
 const listeners = new Set<() => void>();
 
 function setState(next: Partial<AccountState>): void {
@@ -62,6 +74,7 @@ export function currentPlan(): Plan | null {
 }
 
 async function load(session: Session | null): Promise<void> {
+  sessionListeners.forEach((l) => l(session?.user.id ?? null));
   if (!supabase || !session) {
     setState({ ready: true, email: null, entitlement: null });
     return;

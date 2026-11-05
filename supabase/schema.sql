@@ -29,3 +29,20 @@ grant all on public.entitlements to service_role;
 drop policy if exists "read own entitlement" on public.entitlements;
 create policy "read own entitlement" on public.entitlements
   for select using (auth.uid() = user_id);
+
+-- Progress synced across devices (solved exercises, points, saved work, PL-300 scores).
+create table if not exists public.progress (
+  user_id uuid primary key references auth.users (id) on delete cascade default auth.uid(),
+  data jsonb not null default '{}'::jsonb,
+  updated_at timestamptz not null default now()
+);
+alter table public.progress enable row level security;
+drop policy if exists "read own progress" on public.progress;
+create policy "read own progress" on public.progress for select to authenticated using (auth.uid() = user_id);
+drop policy if exists "insert own progress" on public.progress;
+create policy "insert own progress" on public.progress for insert to authenticated with check (auth.uid() = user_id);
+drop policy if exists "update own progress" on public.progress;
+create policy "update own progress" on public.progress for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+revoke all on public.progress from anon, authenticated;
+grant select, insert, update on public.progress to authenticated;
+grant all on public.progress to service_role;
