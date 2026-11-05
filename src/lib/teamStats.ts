@@ -38,3 +38,37 @@ export function teamTotals(members: MemberStats[]): { solved: number; active: nu
     avgPl300: tested.length ? Math.round(tested.reduce((a, b) => a + b, 0) / tested.length) : null,
   };
 }
+
+export interface ChapterProgress {
+  id: string;
+  title: string;
+  done: number;
+  total: number;
+  /** 0–100, rounded. */
+  pct: number;
+}
+
+/** Share of each chapter's exercises a member has solved (project steps are not counted). */
+export function chapterProgress(completed: string[] | undefined, chapters: { id: string; title: string }[], exercises: { id: string; module: string }[]): ChapterProgress[] {
+  const done = new Set(completed ?? []);
+  return chapters.map((c) => {
+    const ids = exercises.filter((e) => e.module === c.id).map((e) => e.id);
+    const n = ids.filter((id) => done.has(id)).length;
+    return { id: c.id, title: c.title, done: n, total: ids.length, pct: ids.length ? Math.round((n / ids.length) * 100) : 0 };
+  });
+}
+
+const csvCell = (v: string | number | null | undefined) => {
+  const s = v === null || v === undefined ? '' : String(v);
+  return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+};
+
+/** CSV rows (header first) for the manager's export; opens directly in Excel. */
+export function teamCsv(
+  rows: { email: string; status: string; joined: string; lastActive: string; stats: MemberStats; chapters: ChapterProgress[] }[],
+): string {
+  const chapterHeaders = rows[0]?.chapters.map((c) => `${c.title} (%)`) ?? [];
+  const header = ['Email', 'Status', 'Joined', 'Last active', 'Exercises solved', 'Points', 'Streak (days)', 'PL-300 best (%)', ...chapterHeaders];
+  const lines = rows.map((r) => [r.email, r.status, r.joined, r.lastActive, r.stats.solved, r.stats.points, r.stats.streak, r.stats.pl300Best ?? '', ...r.chapters.map((c) => c.pct)]);
+  return [header, ...lines].map((l) => l.map(csvCell).join(',')).join('\r\n');
+}

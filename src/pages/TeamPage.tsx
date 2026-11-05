@@ -8,7 +8,9 @@ import type { Team } from '../lib/account';
 import { inviteToTeam, openPortal } from '../lib/billing';
 import { supabase } from '../lib/supabase';
 import { ENTERPRISE_EMAIL } from '../lib/enterprise';
-import { memberStats, teamTotals } from '../lib/teamStats';
+import { chapterProgress, memberStats, teamCsv, teamTotals } from '../lib/teamStats';
+import { EXERCISES } from '../exercises/exercises';
+import { MODULES } from '../exercises/types';
 import type { ProgressSnapshot } from '../lib/progressMerge';
 
 
@@ -28,6 +30,23 @@ const ago = (iso: string | null) => {
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
   return days <= 0 ? 'Today' : days === 1 ? 'Yesterday' : `${days} days ago`;
 };
+
+/** Short chapter names for the progress grid header. */
+const SHORT: Record<string, string> = {
+  reports: 'Reports',
+  filters: 'Filters',
+  pages: 'Pages',
+  powerquery: 'Power Query',
+  modeling: 'Modeling',
+  columns: 'Columns',
+  'dax-basics': 'DAX basics',
+  calculate: 'CALCULATE',
+  'dax-advanced': 'Adv. DAX',
+  time: 'Time intel.',
+};
+
+/** Cell colour by completion: grey (not started) → light → dark brand. */
+const heat = (pct: number) => (pct === 0 ? 'bg-slate-100 text-slate-400' : pct < 34 ? 'bg-amber-100 text-amber-900' : pct < 67 ? 'bg-amber-300 text-amber-950' : pct < 100 ? 'bg-emerald-300 text-emerald-950' : 'bg-emerald-600 text-white');
 
 const STATUS_LABEL: Record<string, string> = {
   invited: 'Added',
@@ -135,6 +154,29 @@ function OwnerDashboard({ team }: { team: Team }) {
   }, [load]);
 
   const stats = useMemo(() => (members ?? []).map((m) => memberStats(m.data)), [members]);
+  const chapters = useMemo(() => (members ?? []).map((m) => chapterProgress(m.data?.completed, MODULES, EXERCISES)), [members]);
+
+  const exportCsv = () => {
+    if (!members) return;
+    const day = (iso: string | null) => (iso ? iso.slice(0, 10) : '');
+    const csv = teamCsv(
+      members.map((m, i) => ({
+        email: m.email,
+        status: m.role === 'owner' ? 'Manager' : m.user_id ? 'Joined' : 'Invited',
+        joined: day(m.joined_at),
+        lastActive: m.user_id ? day(m.last_active) : '',
+        stats: stats[i],
+        chapters: chapters[i],
+      })),
+    );
+    // The BOM makes Excel read the file as UTF-8.
+    const url = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${team.name.replace(/[^\w-]+/g, '_')}_progress_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
   const totals = teamTotals(stats);
   const used = members?.length ?? team.used;
   const free = Math.max(0, team.seats - used);
@@ -197,9 +239,14 @@ function OwnerDashboard({ team }: { team: Team }) {
             {team.status === 'past_due' && ' · Invoice overdue'}
           </p>
         </div>
-        <button type="button" onClick={() => void billing()} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold hover:border-brand-500">
-          Invoices & billing
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" onClick={exportCsv} disabled={!members?.length} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold hover:border-brand-500 disabled:opacity-50">
+            Export report (CSV)
+          </button>
+          <button type="button" onClick={() => void billing()} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold hover:border-brand-500">
+            Invoices & billing
+          </button>
+        </div>
       </div>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-4">
@@ -309,6 +356,40 @@ function OwnerDashboard({ team }: { team: Team }) {
           </tbody>
         </table>
       </section>
+      {members && members.length > 0 && (
+        <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm" data-testid="chapter-grid">
+          <h2 className="text-lg font-bold text-ink">Progress by chapter</h2>
+          <p className="mt-1 text-sm text-slate-600">Share of each chapter's exercises solved. Grey means not started; green means nearly or fully done.</p>
+          <div className="mt-4 overflow-x-auto">
+            <table className="w-full min-w-[760px] border-separate border-spacing-1 text-xs">
+              <thead>
+                <tr>
+                  <th className="px-2 py-1 text-left font-semibold text-slate-500">Member</th>
+                  {MODULES.map((c) => (
+                    <th key={c.id} title={c.title} className="px-1 py-1 text-center font-semibold text-slate-500">
+                      {SHORT[c.id] ?? c.title}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {members.map((m, i) => (
+                  <tr key={m.email}>
+                    <td className="max-w-[180px] truncate px-2 py-1 font-semibold text-ink" title={m.email}>
+                      {m.email}
+                    </td>
+                    {chapters[i].map((c) => (
+                      <td key={c.id} title={`${c.title}: ${c.done} of ${c.total} exercises`} className={`rounded-md px-1 py-2 text-center font-mono font-semibold ${heat(c.pct)}`}>
+                        {c.pct}%
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
       <p className="mt-3 text-xs text-slate-500">Progress appears once a member has signed in and solved an exercise. Members can practice on any device.</p>
     </div>
   );
