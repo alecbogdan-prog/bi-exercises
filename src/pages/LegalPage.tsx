@@ -1,0 +1,113 @@
+import { useEffect } from 'react';
+import { Footer, Header } from '../components/Layout';
+import { BRAND } from '../lib/base';
+
+type Section = { h: string; p: string[] };
+
+const UPDATED = 'November 5, 2026';
+
+const TERMS: Section[] = [
+  {
+    h: 'Using the site',
+    p: [
+      `${BRAND} offers interactive Power BI and DAX practice exercises, projects and practice tests. By using the site you agree to these terms. If you do not agree, please do not use the site.`,
+      'You may use the site for your own learning, and inside your company for training. Do not copy, resell or republish the exercises, explanations or practice questions without our written permission.',
+    ],
+  },
+  {
+    h: 'Accounts and paid plans',
+    p: [
+      'Some features, such as the full exercise library, all projects and all practice tests, are part of paid plans. Prices and what each plan includes are shown on the Pricing page.',
+      'When paid plans and accounts launch, you are responsible for keeping your login details safe and for all activity on your account. Subscriptions renew until you cancel them, and you keep access until the end of the period you paid for.',
+    ],
+  },
+  {
+    h: 'Practice tests and certificates',
+    p: [
+      'Our PL-300 practice tests are written by us to help you prepare. They are not real exam questions and passing them does not guarantee a result in any official exam. Certificates from this site show you completed our course; they are not Microsoft certifications.',
+    ],
+  },
+  {
+    h: 'No warranty',
+    p: [
+      'We work hard to keep the content accurate, but the site is provided "as is". We are not liable for decisions you make based on what you learn here, or for any indirect loss, to the extent the law allows.',
+    ],
+  },
+  {
+    h: 'Trademarks',
+    p: [
+      `${BRAND} is an independent learning site and is not affiliated with, sponsored or endorsed by Microsoft. Power BI, DAX and Excel are trademarks of Microsoft Corporation and are used only to describe the skills taught.`,
+    ],
+  },
+  {
+    h: 'Changes',
+    p: ['We may update these terms. The date at the top shows the latest version. Continuing to use the site after a change means you accept the new terms.'],
+  },
+];
+
+const PRIVACY: Section[] = [
+  {
+    h: 'What we store',
+    p: [
+      'Your progress (solved exercises, practice test scores and your work in the editor) is saved in your own browser, on your device. It is not sent to our servers, and clearing your browser data removes it.',
+      'If you create an account or join a waitlist, we store your email address and, if you give it, your name, so we can run your account and contact you about it.',
+    ],
+  },
+  {
+    h: 'Payments',
+    p: ['When paid plans launch, payments will be handled by a payment provider. We never see or store your full card number.'],
+  },
+  {
+    h: 'Services we use',
+    p: [
+      'The site is hosted on Vercel, which processes standard request data such as your IP address to serve pages and keep the site secure. Fonts are loaded from Google Fonts, which receives your IP address when the fonts load.',
+    ],
+  },
+  {
+    h: 'Cookies',
+    p: ['We do not use advertising cookies and we do not sell your data. We use browser storage only to remember your progress and preferences.'],
+  },
+  {
+    h: 'Your rights',
+    p: [
+      'You can ask us to show, correct or delete the personal data we hold about you, such as your account email. If you are in the EU or UK you also have the rights given by the GDPR, including the right to complain to your local data protection authority.',
+    ],
+  },
+  {
+    h: 'Changes',
+    p: ['We may update this policy. The date at the top shows the latest version.'],
+  },
+];
+
+export default function LegalPage({ kind }: { kind: 'terms' | 'privacy' }) {
+  const title = kind === 'terms' ? 'Terms of Use' : 'Privacy Policy';
+  const sections = kind === 'terms' ? TERMS : PRIVACY;
+
+  useEffect(() => {
+    document.title = `${title} | ${BRAND}`;
+    window.scrollTo(0, 0);
+  }, [title]);
+
+  return (
+    <div className="flex min-h-full flex-col">
+      <Header />
+      <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-12">
+        <h1 className="font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">{title}</h1>
+        <p className="mt-2 text-sm text-slate-500">Last updated {UPDATED}</p>
+        <div className="mt-8 space-y-8">
+          {sections.map((s) => (
+            <section key={s.h}>
+              <h2 className="text-lg font-bold text-ink">{s.h}</h2>
+              {s.p.map((t) => (
+                <p key={t.slice(0, 40)} className="mt-2 leading-relaxed text-slate-700">
+                  {t}
+                </p>
+              ))}
+            </section>
+          ))}
+        </div>
+      </main>
+      <Footer />
+    </div>
+  );
+}

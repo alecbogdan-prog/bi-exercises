@@ -38,17 +38,50 @@ export function Header({ children }: { children?: ReactNode }) {
   );
 }
 
+const FOOTER_PRODUCT = [
+  { to: '/exercises', label: 'Exercises' },
+  { to: '/projects', label: 'Projects' },
+  { to: '/pl300', label: 'PL-300 Practice Tests' },
+  { to: '/pricing', label: 'Pricing' },
+];
+
+const FOOTER_LEGAL = [
+  { to: '/terms', label: 'Terms' },
+  { to: '/privacy', label: 'Privacy Policy' },
+];
+
 export function Footer() {
+  const link = 'font-semibold text-white/85 transition-colors hover:text-[#f2c811]';
   return (
-    <footer className="border-t border-slate-200 bg-white px-4 py-8 text-sm text-slate-500">
-      <div className="mx-auto flex max-w-6xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
-          <Logo className="h-5 w-5" /> © {new Date().getFullYear()} {BRAND}
-          <Link to="/dax-functions" className="ml-3 hover:text-ink">
-            DAX Functions List
-          </Link>
-        </div>
-        <p className="max-w-xl text-xs">
+    <footer className="border-t-4 border-[#f2c811] bg-ink px-4 pt-12 pb-8 text-sm text-white/60">
+      <div className="mx-auto flex max-w-4xl flex-col items-center gap-6 text-center">
+        <Link to="/" className="flex items-center gap-3 font-display text-2xl font-extrabold tracking-tight text-white">
+          <Logo className="h-11 w-11" />
+          {BRAND}
+        </Link>
+        <p>
+          © {new Date().getFullYear()} {BRAND} | All Rights Reserved
+        </p>
+        <nav aria-label="Footer" className="flex flex-col items-center gap-3">
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+            {FOOTER_PRODUCT.map((l) => (
+              <Link key={l.to} to={l.to} className={link}>
+                {l.label}
+              </Link>
+            ))}
+          </div>
+          <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
+            {FOOTER_LEGAL.map((l) => (
+              <Link key={l.to} to={l.to} className={link}>
+                {l.label}
+              </Link>
+            ))}
+            <a href="/sitemap.xml" className={link}>
+              Sitemap
+            </a>
+          </div>
+        </nav>
+        <p className="max-w-2xl text-xs text-white/40">
           {BRAND} is an independent learning site and is not affiliated with, sponsored or endorsed by Microsoft. Power BI is a trademark of Microsoft Corporation and is used here only to
           describe the skills taught. The sample data is fictional.
         </p>

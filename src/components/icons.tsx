@@ -53,12 +53,22 @@ export function VisualIcon({ type, className = 'h-5 w-5' }: { type: VisualType; 
 }
 
 export function Logo({ className = 'h-7 w-7' }: { className?: string }) {
+  // Treemap mark: six tiles in Power BI-style colors, clipped to a rounded square.
   return (
     <svg viewBox="0 0 32 32" className={className} aria-hidden>
-      <rect width="32" height="32" rx="8" fill="#14212b" />
-      <path d="M6 22.5l6-6.5 4.5 4 9.5-11" fill="none" stroke="#f2c811" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="26" cy="9" r="3.2" fill="#e07b00" />
-      <path d="M6 26h20" stroke="#ffffff" strokeOpacity=".35" strokeWidth="1.6" strokeLinecap="round" />
+      <defs>
+        <clipPath id="logo-clip">
+          <rect width="32" height="32" rx="7" />
+        </clipPath>
+      </defs>
+      <g clipPath="url(#logo-clip)">
+        <rect x="0" y="0" width="18.2" height="17.4" rx="1.2" fill="#2b8cf0" />
+        <rect x="0" y="19" width="18.2" height="13" rx="1.2" fill="#2a2378" />
+        <rect x="19.8" y="0" width="12.2" height="10.6" rx="1.2" fill="#f2733a" />
+        <rect x="19.8" y="12.2" width="12.2" height="7.8" rx="1.2" fill="#f2b62c" />
+        <rect x="19.8" y="21.6" width="5.3" height="10.4" rx="1.2" fill="#8e3fa6" />
+        <rect x="26.7" y="21.6" width="5.3" height="10.4" rx="1.2" fill="#13a58f" />
+      </g>
     </svg>
   );
 }
