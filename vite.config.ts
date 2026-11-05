@@ -5,7 +5,33 @@ import { createServer, defineConfig, loadEnv, type Plugin } from 'vite'
 
 const SITE_URL = (process.env.SITE_URL ?? 'https://powerbiexercise.com').replace(/\/$/, '')
 
-interface PageMeta { path: string; title: string; description: string }
+interface PageLink { href: string; text: string }
+interface PageMeta { path: string; title: string; description: string; h1: string; paragraphs: string[]; linksHeading?: string; links: PageLink[] }
+
+const NAV: PageLink[] = [
+  { href: '/exercises', text: 'Exercises' },
+  { href: '/projects', text: 'Projects' },
+  { href: '/dax-functions', text: 'DAX Functions' },
+  { href: '/pl300', text: 'PL-300' },
+  { href: '/pricing', text: 'Pricing' },
+]
+const FOOT: PageLink[] = [
+  { href: '/terms', text: 'Terms' },
+  { href: '/privacy', text: 'Privacy Policy' },
+]
+
+/** Plain, readable HTML of a page for crawlers that don't run JavaScript. React replaces it on load. */
+function staticBody(page: PageMeta): string {
+  const a = (l: PageLink) => `<a href="${escHtml(l.href)}">${escHtml(l.text)}</a>`
+  const list = (ls: PageLink[]) => `<ul>${ls.map((l) => `<li>${a(l)}</li>`).join('')}</ul>`
+  return [
+    `<header><a href="/">Power BI Exercises</a><nav>${NAV.map(a).join(' ')}</nav></header>`,
+    `<main><h1>${escHtml(page.h1)}</h1>`,
+    ...page.paragraphs.filter(Boolean).map((t) => `<p>${escHtml(t)}</p>`),
+    page.links.length ? `${page.linksHeading ? `<h2>${escHtml(page.linksHeading)}</h2>` : ''}${list(page.links)}` : '',
+    `</main><footer>${FOOT.map(a).join(' ')}</footer>`,
+  ].join('')
+}
 
 const escHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
@@ -20,6 +46,7 @@ function withMeta(html: string, page: PageMeta): string {
     .replace(/<meta property="og:title" content="[^"]*"\s*\/?>/, `<meta property="og:title" content="${t}" />`)
     .replace(/<meta property="og:description" content="[^"]*"\s*\/?>/, `<meta property="og:description" content="${d}" />`)
     .replace('</head>', `    <link rel="canonical" href="${url}" />\n    <meta property="og:url" content="${url}" />\n  </head>`)
+    .replace('<div id="root"></div>', `<div id="root">${staticBody(page)}</div>`)
 }
 
 /**

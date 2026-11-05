@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { computeVisual, valueLabel, visualTitle } from '../engine/visual';
@@ -24,10 +24,15 @@ import { LockedEditor, ProUnlockCard } from '../components/ProLock';
 import { canOpen, hasPro } from '../lib/access';
 import { HintSpotlight } from '../components/HintSpotlight';
 import type { LessonStatus } from '../components/Progress';
+import { exerciseTitle } from '../lib/titles';
 
 export default function ExercisePage() {
   const { id = '' } = useParams();
   const ex = exerciseById(id);
+  useEffect(() => {
+    // Same title as the static HTML written at build time (src/lib/sitemapPaths.ts).
+    if (ex) document.title = exerciseTitle(ex.title);
+  }, [ex]);
   if (!ex) {
     return (
       <div className="flex h-full flex-col">

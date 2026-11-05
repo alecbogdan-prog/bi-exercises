@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Footer, Header } from '../components/Layout';
-import { BRAND } from '../lib/base';
 import { ProjectCards } from '../components/ProjectCards';
+import { withBrand } from '../lib/titles';
 
 export default function ProjectsPage() {
   useEffect(() => {
-    document.title = `Power BI Projects: Build Real Dashboards Step by Step | ${BRAND}`;
+    document.title = withBrand('Power BI Practice Projects: Build Real Dashboards');
   }, []);
   return (
     <div className="flex min-h-full flex-col bg-white">

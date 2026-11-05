@@ -5,6 +5,7 @@ import { DAX_CATEGORIES, DAX_FUNCTIONS, exercisesByFunction } from '../content/d
 import type { DaxFunction } from '../content/daxFunctions';
 import { EXERCISES } from '../exercises/exercises';
 import { BRAND } from '../lib/base';
+import { withBrand } from '../lib/titles';
 
 const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-');
 
@@ -14,7 +15,7 @@ export default function DaxFunctionsPage() {
   const start = `/exercise/${EXERCISES[0].id}`;
 
   useEffect(() => {
-    document.title = `DAX Functions List with Practice Exercises | ${BRAND}`;
+    document.title = withBrand('DAX Functions List with Practice Exercises');
   }, []);
 
   const q = query.trim().toLowerCase();

@@ -4,9 +4,9 @@ import { Footer, Header } from '../components/Layout';
 import { LockIcon } from '../components/ProLock';
 import { DAX_CATEGORIES, DAX_FUNCTIONS, argumentsOf, exercisesByFunction, functionBySlug } from '../content/daxFunctions';
 import { EXERCISES } from '../exercises/exercises';
-import { BRAND } from '../lib/base';
 import DaxFunctionsPage from './DaxFunctionsPage';
 import { hasPro } from '../lib/access';
+import { daxTitle } from '../lib/titles';
 
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
@@ -16,7 +16,7 @@ export default function DaxFunctionPage() {
   const practice = useMemo(() => (fn ? (exercisesByFunction().get(fn.name) ?? []) : []), [fn]);
 
   useEffect(() => {
-    if (fn) document.title = `DAX ${fn.name} Function: Syntax, Example and Practice | ${BRAND}`;
+    if (fn) document.title = daxTitle(fn.name);
     window.scrollTo(0, 0);
   }, [fn]);
 

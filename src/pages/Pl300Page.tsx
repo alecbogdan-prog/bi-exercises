@@ -6,10 +6,11 @@ import { hasPl300 } from '../lib/access';
 import { BRAND } from '../lib/base';
 import { bestScore } from '../pl300/scores';
 import { DOMAINS, PASS_MARK, QUESTIONS, TESTS } from '../pl300/questions';
+import { withBrand } from '../lib/titles';
 
 export default function Pl300Page() {
   useEffect(() => {
-    document.title = `PL-300 Practice Tests: Power BI Data Analyst Exam Prep | ${BRAND}`;
+    document.title = withBrand('PL-300 Practice Test: Power BI Exam Prep');
   }, []);
 
   return (

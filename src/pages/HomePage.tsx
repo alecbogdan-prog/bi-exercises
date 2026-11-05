@@ -86,7 +86,7 @@ function PrimaryButton({ to, children, tone = 'green' }: { to: string; children:
 
 export default function HomePage() {
   useEffect(() => {
-    document.title = 'Power BI Practice Exercises Online: Learn Power BI and DAX by Doing';
+    document.title = 'Power BI Practice Exercises Online: Learn Power BI and DAX';
   }, []);
   const first = EXERCISES[0];
   const start = `/exercise/${first.id}`;

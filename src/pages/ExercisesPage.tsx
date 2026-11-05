@@ -99,7 +99,7 @@ export function ExerciseList() {
 
 export default function ExercisesPage() {
   useEffect(() => {
-    document.title = `${EXERCISES.length} Power BI Practice Exercises with Instant Feedback | Power BI Exercises`;
+    document.title = `${EXERCISES.length} Power BI Practice Exercises | Power BI Exercises`;
   }, []);
   return (
     <div className="flex min-h-full flex-col">

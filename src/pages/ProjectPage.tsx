@@ -6,12 +6,13 @@ import { LockIcon } from '../components/ProLock';
 import { ProgressBar } from '../components/Progress';
 import { computeVisual } from '../engine/visual';
 import { canOpen, hasPro } from '../lib/access';
-import { BRAND, baseEngine } from '../lib/base';
+import { baseEngine } from '../lib/base';
 import { downloadBytes, modelCsvFiles, projectBrief, zipFiles } from '../lib/download';
 import { completedIds } from '../lib/storage';
 import { dashboardTiles, projectById, projectMeasures } from '../projects/projects';
 import type { Project } from '../projects/projects';
 import ProjectsPage from './ProjectsPage';
+import { projectTitle } from '../lib/titles';
 
 export default function ProjectPage() {
   const { id = '' } = useParams();
@@ -32,7 +33,7 @@ function ProjectView({ project: p }: { project: Project }) {
   }, [p, tiles]);
 
   useEffect(() => {
-    document.title = `${p.title}: Power BI Project | ${BRAND}`;
+    document.title = projectTitle(p.title);
   }, [p]);
 
   const downloadAll = () => {

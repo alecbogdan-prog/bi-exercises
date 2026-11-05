@@ -4,11 +4,11 @@ import { Footer, Header } from '../components/Layout';
 import { LockIcon } from '../components/ProLock';
 import { ProgressBar } from '../components/Progress';
 import { hasPl300 } from '../lib/access';
-import { BRAND } from '../lib/base';
 import { saveScore } from '../pl300/scores';
 import { DOMAINS, PASS_MARK, TESTS, isCorrect, questionById } from '../pl300/questions';
 import type { Question } from '../pl300/questions';
 import Pl300Page from './Pl300Page';
+import { testTitle } from '../lib/titles';
 
 const LETTERS = 'ABCDEFG';
 
@@ -69,7 +69,7 @@ function TestRunner({ testId }: { testId: string }) {
   const [orders, setOrders] = useState(() => shuffledOrders(questions));
 
   useEffect(() => {
-    document.title = `${test.title}: PL-300 Practice | ${BRAND}`;
+    document.title = testTitle(test.title);
   }, [test]);
 
   const q = questions[index];
