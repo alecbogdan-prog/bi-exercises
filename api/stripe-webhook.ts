@@ -1,5 +1,5 @@
 import type Stripe from 'stripe';
-import { PL300_DAYS, admin, entitlementOf, isLive, json, stripe } from './_lib.js';
+import { PL300_DAYS, admin, entitlementOf, isLive, json, stripe, teamFieldsFrom } from './_lib.js';
 import type { EntitlementRow } from './_lib.js';
 
 /**
@@ -25,6 +25,10 @@ export async function POST(req: Request): Promise<Response> {
     case 'customer.subscription.updated':
     case 'customer.subscription.deleted': {
       const sub = event.data.object;
+      if (sub.metadata.kind === 'team') {
+        await saveTeamSubscription(sub);
+        break;
+      }
       const userId = sub.metadata.user_id;
       if (userId) await saveSubscription(userId, sub);
       break;
@@ -87,4 +91,13 @@ async function saveSubscription(userId: string, sub: Stripe.Subscription): Promi
     stripe_customer_id: idOf(sub.customer),
     stripe_subscription_id: sub.id,
   });
+}
+
+/** Enterprise teams: keep seats, status and access dates in sync with their (invoiced) subscription. */
+async function saveTeamSubscription(sub: Stripe.Subscription): Promise<void> {
+  const { error } = await admin()
+    .from('teams')
+    .update({ ...teamFieldsFrom(sub), updated_at: new Date().toISOString() })
+    .eq('stripe_subscription_id', sub.id);
+  if (error) throw error;
 }

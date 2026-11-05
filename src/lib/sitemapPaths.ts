@@ -129,7 +129,7 @@ export function pageMeta(): PageMeta[] {
       title: title('Pricing: Power BI Practice Plans'),
       description: desc('Start practicing Power BI for free. Upgrade to Pro for every exercise, project and PL-300 practice test, or buy a 3-month PL-300 Prep pass.', FILLER),
       h1: 'Pricing',
-      paragraphs: ['Free: the first exercises of every chapter, one project and PL-300 practice test 1. Pro: every exercise, project and practice test, yearly or monthly. PL-300 Prep: 3 months of practice tests.'],
+      paragraphs: ['Free: the first exercises of every chapter, one project and PL-300 practice test 1. Pro: every exercise, project and practice test, yearly or monthly. PL-300 Prep: 3 months of practice tests. Enterprise: Pro for your whole team, a manager dashboard with everyone’s progress and one company invoice; contact us for a quote.'],
       links: [
         { href: '/exercises', text: 'Start with the free exercises' },
         { href: '/pl300', text: 'Try the free PL-300 practice test' },

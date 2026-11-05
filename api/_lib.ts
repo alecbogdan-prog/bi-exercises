@@ -72,3 +72,37 @@ export function isLive(e: Pick<EntitlementRow, 'status' | 'current_period_end'> 
   if (!e || !['active', 'trialing', 'past_due', 'paid'].includes(e.status)) return false;
   return !e.current_period_end || new Date(e.current_period_end).getTime() > now;
 }
+
+// ---------------- Enterprise / team plans (sold by invoice, created with scripts/team-admin.mjs) ----------------
+
+export interface TeamRow {
+  id: string;
+  name: string;
+  owner_id: string;
+  seats: number;
+  status: string;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+}
+
+/** The team this user owns, if any. */
+export async function teamOwnedBy(userId: string): Promise<TeamRow | null> {
+  const { data, error } = await admin().from('teams').select('*').eq('owner_id', userId).order('created_at', { ascending: false }).limit(1).maybeSingle();
+  if (error) throw error;
+  return data as TeamRow | null;
+}
+
+/** Team fields from its Stripe subscription (seats = quantity; access ends at cancel_at or the period end). */
+export function teamFieldsFrom(sub: Stripe.Subscription): Pick<TeamRow, 'seats' | 'status' | 'current_period_end' | 'cancel_at_period_end'> {
+  const item = sub.items.data[0];
+  const periodEnd = item?.current_period_end;
+  const end = sub.cancel_at && periodEnd ? Math.min(sub.cancel_at, periodEnd) : (sub.cancel_at ?? periodEnd);
+  return {
+    seats: item?.quantity ?? 1,
+    status: sub.status,
+    current_period_end: end ? new Date(end * 1000).toISOString() : null,
+    cancel_at_period_end: sub.cancel_at_period_end || sub.cancel_at !== null,
+  };
+}

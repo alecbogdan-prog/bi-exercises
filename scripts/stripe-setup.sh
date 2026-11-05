@@ -18,4 +18,7 @@ stripe prices create ${MODE[@]+"${MODE[@]}"} --product "$PRO" --currency usd --u
 PREP=$(product "PL-300 Prep" "3 months of PL-300 practice tests")
 stripe prices create ${MODE[@]+"${MODE[@]}"} --product "$PREP" --currency usd --unit-amount 4900 --lookup-key pl300_prep --nickname "PL-300 Prep, 3 months" >/dev/null
 
-echo "Created: Pro ($PRO) with pro_yearly + pro_monthly, PL-300 Prep ($PREP) with pl300_prep."
+TEAM=$(product "Power BI Exercises Team" "Pro for every seat, a manager dashboard and company invoices. Billed yearly per seat.")
+stripe prices create ${MODE[@]+"${MODE[@]}"} --product "$TEAM" --currency usd --unit-amount 14400 -d "recurring[interval]=year" --lookup-key team_seat_yearly --nickname "Team seat, yearly" >/dev/null
+
+echo "Created: Pro ($PRO) with pro_yearly + pro_monthly, PL-300 Prep ($PREP) with pl300_prep, Team ($TEAM) with team_seat_yearly."

@@ -115,6 +115,19 @@ export default function AccountPage() {
           )}
         </section>
 
+        {account.team && (
+          <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="text-sm font-semibold tracking-wide text-slate-500 uppercase">Team</h2>
+            <p className="mt-2 text-lg font-bold text-ink">{account.team.name}</p>
+            <p className="mt-1 text-sm text-slate-600">
+              {account.team.role === 'owner' ? `You manage this team: ${account.team.used} of ${account.team.seats} seats used.` : 'Your company gives you Pro through this team.'}
+            </p>
+            <Link to="/team" className="mt-4 inline-block rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold hover:border-brand-500">
+              {account.team.role === 'owner' ? 'Open team dashboard' : 'View team'}
+            </Link>
+          </section>
+        )}
+
         <button
           type="button"
           onClick={() => void signOut().then(() => navigate('/'))}

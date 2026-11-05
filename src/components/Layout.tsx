@@ -6,7 +6,7 @@ import { useAccount } from '../lib/account';
 import { GA_ID, reopenConsent } from '../lib/analytics';
 
 export function Header({ children }: { children?: ReactNode }) {
-  const { email } = useAccount();
+  const { email, team } = useAccount();
   const nav = ({ isActive }: { isActive: boolean }) => `whitespace-nowrap rounded-md px-2 py-1.5 text-sm font-medium sm:px-2.5 ${isActive ? 'text-ink' : 'text-slate-500 hover:text-ink'}`;
   return (
     <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b border-slate-200 bg-white/95 px-4 backdrop-blur">
@@ -34,6 +34,11 @@ export function Header({ children }: { children?: ReactNode }) {
       </nav>
       <div className="flex-1" />
       {children}
+      {team && (
+        <Link to="/team" className="hidden whitespace-nowrap rounded-full px-3 py-1 text-sm font-semibold text-slate-600 hover:text-ink md:block">
+          Team
+        </Link>
+      )}
       <Link to={email ? '/account' : '/login'} className="hidden whitespace-nowrap rounded-full border border-slate-300 px-3 py-1 text-sm font-semibold text-ink hover:border-brand-500 md:block">
         {email ? 'Account' : 'Log in'}
       </Link>

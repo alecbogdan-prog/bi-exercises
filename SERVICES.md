@@ -19,6 +19,10 @@ Where each part of the site lives and what it is for. No passwords or keys here:
 | SEO audit | **Ahrefs Webmaster Tools** (free) | project *Powerbiexercise*, imported from Search Console; weekly Site Audit | Health score 100 after the static-content fix (Nov 5 2026). IndexNow key `4148006c6e091ad1a7b3c8adc37781b8` (public file `/4148006c6e091ad1a7b3c8adc37781b8.txt`) for Bing/Yandex. |
 | Logo | **Google Flow** | project "Nov 05 - 11:20" | Treemap logo concepts; redrawn as SVG in `src/components/icons.tsx` + `public/favicon.svg`. |
 
+## Enterprise (team) plans
+
+Sold by invoice, not on the website. See [ENTERPRISE.md](ENTERPRISE.md): `npm run team:live -- create ...` creates the team and emails the Stripe invoice; the manager manages people at `/team`.
+
 ## Still test-mode / to do before launch
 
 - Stripe: do one real purchase with your own card and refund it, to confirm the full live flow.

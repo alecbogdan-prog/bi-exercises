@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "test": "vitest run",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "team": "node --env-file=.env.local scripts/team-admin.mjs",
+    "team:live": "node --env-file=.env.local --env-file=.env.production.local scripts/team-admin.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.0",

@@ -6,6 +6,7 @@ Paste each file into Supabase → Authentication → Emails → Templates (the "
 |---|---|---|
 | `confirm-signup.html` | Confirm signup | Confirm your email for Power BI Exercises |
 | `magic-link.html` | Magic Link | Your Power BI Exercises sign-in link |
+| `invite-user.html` | Invite user | You're invited to Power BI Exercises |
 | `change-email.html` | Change Email Address | Confirm your new email for Power BI Exercises |
 
 `{{ .ConfirmationURL }}` and `{{ .NewEmail }}` are filled in by Supabase.

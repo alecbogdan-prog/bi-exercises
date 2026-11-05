@@ -12,6 +12,7 @@ import ProjectPage from './pages/ProjectPage';
 import Pl300TestPage from './pages/Pl300TestPage';
 import LegalPage from './pages/LegalPage';
 import AccountPage from './pages/AccountPage';
+import TeamPage from './pages/TeamPage';
 import { useAccount } from './lib/account';
 // Registers progress sync with the account (copies progress to and from Supabase).
 import './lib/sync';
@@ -41,6 +42,7 @@ export default function App() {
         <Route path="/signup" element={<AuthPage mode="signup" />} />
         <Route path="/login" element={<AuthPage mode="login" />} />
         <Route path="/account" element={<AccountPage />} />
+        <Route path="/team" element={<TeamPage />} />
         <Route path="/terms" element={<LegalPage kind="terms" />} />
         <Route path="/privacy" element={<LegalPage kind="privacy" />} />
         <Route path="*" element={<HomePage />} />

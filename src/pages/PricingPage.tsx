@@ -4,6 +4,7 @@ import { currentPlan, useAccount } from '../lib/account';
 import { BillingError, startCheckout } from '../lib/billing';
 import type { OfferId } from '../lib/billing';
 import { accountsEnabled } from '../lib/supabase';
+import { ENTERPRISE_EMAIL } from '../lib/enterprise';
 import { Footer, Header } from '../components/Layout';
 import { EXERCISES } from '../exercises/exercises';
 
@@ -11,7 +12,15 @@ export const PLANS = [
   { name: 'Free', price: '$0', period: '', features: ['The first 2 exercises in every chapter', 'The Sales Overview Dashboard project', 'PL-300 practice test 1', 'Instant answer checking', 'Full DAX functions guide', 'Progress saved on this device'], cta: 'Start now', highlight: false },
   { name: 'Pro', price: '$79', period: '/year', sub: 'or $12.99/month', features: [`All ${EXERCISES.length} exercises`, 'All end-to-end dashboard projects, with data downloads', 'Every PL-300 practice test', 'Power Query & data modeling modules', 'Certificate for LinkedIn', 'Progress synced across devices'], cta: 'Get Pro yearly', offer: 'pro-year' as OfferId, alt: { label: 'or pay $12.99 monthly', offer: 'pro-month' as OfferId }, highlight: true },
   { name: 'PL-300 Prep', price: '$49', period: ' one-time', sub: '3 months of access', features: ['Exam-style practice tests', 'Explanations for every answer', 'Weak-topic review'], cta: 'Buy PL-300 Prep', offer: 'pl300' as OfferId, highlight: false },
-  { name: 'Team', price: '$12', period: '/user/month', sub: 'billed yearly, 5+ seats', features: ['Everything in Pro', 'Manager dashboard & progress reports', 'Invoice billing'], cta: 'Contact us', highlight: false },
+  {
+    name: 'Enterprise',
+    price: 'Custom',
+    period: '',
+    sub: 'per user, billed yearly by invoice',
+    features: ['Pro for everyone on your team', 'Manager dashboard with each person’s progress', 'Invite and remove people any time', 'One company invoice with your VAT ID', 'Volume discounts'],
+    cta: 'Contact us',
+    highlight: false,
+  },
 ];
 
 const OFFER_IDS: OfferId[] = ['pro-year', 'pro-month', 'pl300'];
@@ -104,9 +113,19 @@ export default function PricingPage() {
                     </button>
                   )}
                 </>
+              ) : p.name === 'Enterprise' ? (
+                account.team ? (
+                  <Link to="/team" className={btn(p.highlight)}>
+                    Your team plan
+                  </Link>
+                ) : (
+                  <a href={`mailto:${ENTERPRISE_EMAIL}?subject=${encodeURIComponent('Enterprise plan for my team')}`} className={btn(p.highlight)}>
+                    {p.cta}
+                  </a>
+                )
               ) : (
                 <Link to={p.name === 'Free' ? '/exercises' : '#'} className={btn(p.highlight)}>
-                  {p.name === 'Free' || p.name === 'Team' ? p.cta : 'Coming soon'}
+                  {p.name === 'Free' ? p.cta : 'Coming soon'}
                 </Link>
               )}
             </div>
