@@ -74,13 +74,16 @@ async function saveSubscription(userId: string, sub: Stripe.Subscription): Promi
   // Ignore events for an older subscription once the user has moved to a different one.
   if (current?.stripe_subscription_id && current.stripe_subscription_id !== sub.id && isLive(current)) return;
   // Newer Stripe API versions keep the billing period on the subscription item.
-  const end = sub.items.data[0]?.current_period_end;
+  const periodEnd = sub.items.data[0]?.current_period_end;
+  // The customer portal cancels by setting cancel_at (not cancel_at_period_end) on newer API versions; honour both.
+  const cancelling = sub.cancel_at_period_end || sub.cancel_at !== null;
+  const end = sub.cancel_at && periodEnd ? Math.min(sub.cancel_at, periodEnd) : (sub.cancel_at ?? periodEnd);
   await upsert({
     user_id: userId,
     plan: 'pro',
     status: sub.status,
     current_period_end: end ? new Date(end * 1000).toISOString() : null,
-    cancel_at_period_end: sub.cancel_at_period_end,
+    cancel_at_period_end: cancelling,
     stripe_customer_id: idOf(sub.customer),
     stripe_subscription_id: sub.id,
   });
