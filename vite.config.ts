@@ -3,7 +3,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { existsSync } from 'node:fs'
 import { createServer, defineConfig, loadEnv, type Plugin } from 'vite'
 
-const SITE_URL = (process.env.SITE_URL ?? 'https://bi-exercises.vercel.app').replace(/\/$/, '')
+const SITE_URL = (process.env.SITE_URL ?? 'https://powerbiexercise.com').replace(/\/$/, '')
 
 /** Writes sitemap.xml and robots.txt into the build, listing every page from src/lib/sitemapPaths.ts. */
 function sitemap(): Plugin {
