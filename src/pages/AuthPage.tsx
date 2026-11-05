@@ -7,6 +7,9 @@ import { BRAND } from '../lib/base';
 import { useAccount } from '../lib/account';
 import { accountsEnabled, supabase } from '../lib/supabase';
 
+// Google sign-in needs the Google provider set up in Supabase first; turn the button on with VITE_GOOGLE_AUTH=1.
+const googleEnabled = import.meta.env.VITE_GOOGLE_AUTH === '1';
+
 /** Only follow same-site paths after log-in, never another domain. */
 function safeNext(raw: string | null): string {
   return raw && raw.startsWith('/') && !raw.startsWith('//') ? raw : '/account';
@@ -95,6 +98,8 @@ export default function AuthPage({ mode }: { mode: 'signup' | 'login' }) {
             </div>
           ) : (
             <form onSubmit={(e) => void submit(e)} className="mt-6 space-y-3">
+              {(googleEnabled || !accountsEnabled) && (
+                <>
               <button type="button" onClick={() => void google()} className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 font-semibold text-ink hover:border-slate-400">
                 <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
                   <path fill="#4285F4" d="M22.5 12.3c0-.8-.1-1.5-.2-2.2H12v4.2h5.9a5 5 0 0 1-2.2 3.3v2.7h3.5c2.1-1.9 3.3-4.7 3.3-8z" />
@@ -109,6 +114,8 @@ export default function AuthPage({ mode }: { mode: 'signup' | 'login' }) {
                 or
                 <span className="h-px flex-1 bg-slate-200" />
               </div>
+                </>
+              )}
               <label className="block text-sm font-medium text-ink">
                 Email
                 <input

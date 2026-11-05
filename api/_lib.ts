@@ -32,7 +32,7 @@ export function stripe(): Stripe {
 let adminClient: SupabaseClient | null = null;
 /** Supabase with the service role key: bypasses row level security, so only use it on the server. */
 export function admin(): SupabaseClient {
-  adminClient ??= createClient(env('VITE_SUPABASE_URL'), env('SUPABASE_SERVICE_ROLE_KEY'), { auth: { persistSession: false } });
+  adminClient ??= createClient(env('VITE_SUPABASE_URL').replace(/\/(rest\/v1\/?)?$/, ''), env('SUPABASE_SERVICE_ROLE_KEY'), { auth: { persistSession: false } });
   return adminClient;
 }
 
