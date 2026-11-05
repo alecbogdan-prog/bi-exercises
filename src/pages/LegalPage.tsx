@@ -55,17 +55,21 @@ const PRIVACY: Section[] = [
   },
   {
     h: 'Payments',
-    p: ['When paid plans launch, payments will be handled by a payment provider. We never see or store your full card number.'],
+    p: ['Payments are handled by Stripe. We never see or store your full card number; we only keep your plan, its status and renewal date.'],
   },
   {
     h: 'Services we use',
     p: [
-      'The site is hosted on Vercel, which processes standard request data such as your IP address to serve pages and keep the site secure. Fonts are loaded from Google Fonts, which receives your IP address when the fonts load.',
+      'The site is hosted on Vercel, which processes standard request data such as your IP address to serve pages and keep the site secure. Accounts are stored with Supabase, sign-in and account emails are sent through Resend, and payments go through Stripe. Fonts are loaded from Google Fonts, which receives your IP address when the fonts load.',
+      'If you accept analytics cookies, we use Google Analytics to count visits and see which pages are used, so we can improve them. Google receives your IP address and details about your browser and the pages you view. We do not use it for advertising.',
     ],
   },
   {
     h: 'Cookies',
-    p: ['We do not use advertising cookies and we do not sell your data. We use browser storage only to remember your progress and preferences.'],
+    p: [
+      'We do not use advertising cookies and we do not sell your data. Browser storage remembers your progress, your preferences and your cookie choice.',
+      'Google Analytics cookies (_ga and _ga_*) are set only after you click Accept on the cookie banner. You can change your choice at any time with "Cookie settings" at the bottom of every page; if you withdraw consent, we delete those cookies.',
+    ],
   },
   {
     h: 'Your rights',

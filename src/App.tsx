@@ -13,6 +13,7 @@ import Pl300TestPage from './pages/Pl300TestPage';
 import LegalPage from './pages/LegalPage';
 import AccountPage from './pages/AccountPage';
 import { useAccount } from './lib/account';
+import { CookieBanner, PageViews } from './components/CookieBanner';
 
 // Hosts that serve a single page (e.g. a claude.ai preview) need hash-based routing.
 const Router = import.meta.env.VITE_HASH_ROUTER ? HashRouter : BrowserRouter;
@@ -22,6 +23,8 @@ export default function App() {
   useAccount();
   return (
     <Router>
+      <PageViews />
+      <CookieBanner />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/exercises" element={<ExercisesPage />} />

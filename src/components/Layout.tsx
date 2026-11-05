@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { BRAND } from '../lib/base';
 import { Logo } from './icons';
 import { useAccount } from '../lib/account';
+import { GA_ID, reopenConsent } from '../lib/analytics';
 
 export function Header({ children }: { children?: ReactNode }) {
   const { email } = useAccount();
@@ -81,6 +82,11 @@ export function Footer() {
             <a href="/sitemap.xml" className={link}>
               Sitemap
             </a>
+            {GA_ID && (
+              <button type="button" onClick={reopenConsent} className={link}>
+                Cookie settings
+              </button>
+            )}
           </div>
         </nav>
         <p className="max-w-2xl text-xs text-white/40">
