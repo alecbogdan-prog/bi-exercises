@@ -5,6 +5,8 @@ import type { Step } from '../../engine/query';
 import type { FieldFilter, FieldRef, FilterScope, VisualSpec } from '../../engine/visual';
 import { DRILL_ALL, formatKey, valueLabel } from '../../engine/visual';
 import { queryStep } from './pqHints';
+import { pagesStep } from './pagesHints';
+import type { ReportState } from '../../report/report';
 import type { Exercise } from '../../exercises/types';
 import type { DragItem } from '../../lib/workspace';
 import { fieldUsed, wellsFor } from '../../lib/workspace';
@@ -23,6 +25,8 @@ export interface WorkState {
   steps?: Step[];
   /** The model's relationships as the learner has them now. */
   relationships?: Relationship[];
+  /** Multi-page exercises: the report as the learner has it now. */
+  report?: ReportState;
 }
 
 const SECTION: Record<FilterScope, string> = { visual: 'Filters on this visual', page: 'Filters on this page', all: 'Filters on all pages' };
@@ -237,6 +241,7 @@ export function nextClick(ex: Exercise, work: WorkState, fact = 'Sales'): NextCl
     }
     return { hint: { target: '[data-testid="mini-new"]' }, text: c.kind === 'dax' ? 'Click New measure to open the formula bar.' : 'Click New column to open the formula bar.' };
   }
+  if (c.kind === 'pages') return work.report ? (pagesStep(c.require, work.report) ?? CHECK) : null;
   if (c.kind === 'query') return queryStep(ex.solution.steps ?? [], work.steps ?? ex.query?.starterSteps ?? []) ?? CHECK;
   if (c.kind === 'model') return modelStep(c, work.relationships ?? ex.starterRelationships ?? []) ?? (c.report ? reportStep({ ...ex, check: c.report }, work.spec, fact) : null) ?? CHECK;
   if (c.kind !== 'report') return null;
