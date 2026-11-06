@@ -25,13 +25,15 @@ interface Props {
   onDeleteMeasure: (m: Measure) => void;
   onOpenColumn: (c: CalcColumn) => void;
   onDeleteColumn: (c: CalcColumn) => void;
+  /** Simple view: no dragging, a click anywhere on a field's row ticks or unticks it. */
+  clickToTick?: boolean;
 }
 
 type Entry =
   | { kind: 'column'; name: string; type: string; format?: string; calc?: CalcColumn }
   | { kind: 'measure'; name: string; measure: Measure; mine: boolean };
 
-export function DataPane({ engine: base, spec, slicerField, given, measures, selectedTable, onSelectTable, onToggle, onOpenMeasure, onNewMeasure, onNewColumn, onDeleteMeasure, onOpenColumn, onDeleteColumn }: Props) {
+export function DataPane({ engine: base, spec, slicerField, given, measures, selectedTable, onSelectTable, onToggle, onOpenMeasure, onNewMeasure, onNewColumn, onDeleteMeasure, onOpenColumn, onDeleteColumn, clickToTick = false }: Props) {
   const [q, setQ] = useState('');
   const [open, setOpen] = useState<Record<string, boolean>>({ Sales: true });
   const [menu, setMenu] = useState<{ x: number; y: number; items: MenuItem[] } | null>(null);
@@ -64,6 +66,7 @@ export function DataPane({ engine: base, spec, slicerField, given, measures, sel
           <div key={t.name}>
             <div
               role="button"
+              data-table={t.name}
               onClick={() => {
                 setOpen({ ...open, [t.name]: !open[t.name] });
                 onSelectTable?.(t.name);
@@ -100,8 +103,9 @@ export function DataPane({ engine: base, spec, slicerField, given, measures, sel
                 return (
                   <div
                     key={e.kind + e.name}
-                    draggable
-                    onDragStart={(ev) => startDrag(ev, item)}
+                    draggable={!clickToTick}
+                    onDragStart={clickToTick ? undefined : (ev) => startDrag(ev, item)}
+                    onClick={clickToTick && spec ? () => onToggle(item) : undefined}
                     onContextMenu={(ev) => {
                       if (e.kind === 'column') {
                         if (!e.calc) return;
@@ -136,7 +140,7 @@ export function DataPane({ engine: base, spec, slicerField, given, measures, sel
                             ],
                       });
                     }}
-                    className="group flex h-[26px] cursor-grab items-center gap-1.5 rounded-[2px] pr-1 pl-6 text-[12px] hover:bg-d-hover"
+                    className={`group flex h-[26px] ${clickToTick ? 'cursor-pointer' : 'cursor-grab'} items-center gap-1.5 rounded-[2px] pr-1 pl-6 text-[12px] hover:bg-d-hover`}
                     data-field={`${t.name}.${e.name}`}
                   >
                     {spec && (
@@ -144,6 +148,7 @@ export function DataPane({ engine: base, spec, slicerField, given, measures, sel
                         type="checkbox"
                         checked={used}
                         onChange={() => onToggle(item)}
+                        onClick={clickToTick ? (ev) => ev.stopPropagation() : undefined}
                         aria-label={`Use ${e.name}`}
                         className="h-3.5 w-3.5 shrink-0 accent-[#0f6cbd]"
                       />
@@ -163,7 +168,7 @@ export function DataPane({ engine: base, spec, slicerField, given, measures, sel
                     </span>
                     <span
                       className="min-w-0 flex-1 truncate"
-                      onClick={() => (e.kind === 'measure' ? onOpenMeasure(e.measure, e.mine) : e.calc && onOpenColumn(e.calc))}
+                      onClick={clickToTick ? undefined : () => (e.kind === 'measure' ? onOpenMeasure(e.measure, e.mine) : e.calc && onOpenColumn(e.calc))}
                       title={e.kind === 'measure' ? `${e.name} = ${e.measure.expression}` : e.calc ? `${e.name} = ${e.calc.expression}` : `${t.name}[${e.name}]`}
                     >
                       {e.name}

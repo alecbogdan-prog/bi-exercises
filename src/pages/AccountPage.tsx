@@ -4,6 +4,7 @@ import { Footer, Header } from '../components/Layout';
 import { BRAND } from '../lib/base';
 import { currentPlan, refreshAccount, signOut, useAccount } from '../lib/account';
 import { openPortal } from '../lib/billing';
+import { loadNickname, saveNickname } from '../lib/leaderboard';
 
 const PLAN_NAMES = { pro: 'Pro', pl300: 'PL-300 Prep' } as const;
 
@@ -115,6 +116,8 @@ export default function AccountPage() {
           )}
         </section>
 
+        <NicknameCard email={account.email} />
+
         {account.team && (
           <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="text-sm font-semibold tracking-wide text-slate-500 uppercase">Team</h2>
@@ -138,5 +141,68 @@ export default function AccountPage() {
       </main>
       <Footer />
     </div>
+  );
+}
+
+/** The name shown on the leaderboard, and a switch to stay off it. */
+function NicknameCard({ email }: { email: string | null }) {
+  const [nick, setNick] = useState('');
+  const [hidden, setHidden] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (!email) return;
+    void loadNickname().then((n) => {
+      setNick(n.nickname ?? '');
+      setHidden(n.hidden);
+    });
+  }, [email]);
+  if (!email) return null;
+  const save = async () => {
+    setBusy(true);
+    const err = await saveNickname(nick, hidden);
+    setBusy(false);
+    setMsg(err ? { ok: false, text: err } : { ok: true, text: 'Saved.' });
+  };
+  return (
+    <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <h2 className="text-sm font-semibold tracking-wide text-slate-500 uppercase">Leaderboard</h2>
+      <label className="mt-3 block text-sm font-medium text-ink" htmlFor="nickname">
+        Nickname
+      </label>
+      <p className="text-xs text-slate-500">Without one, you show up as the first letters of your email ({email.split('@')[0].slice(0, 3)}***).</p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        <input
+          id="nickname"
+          value={nick}
+          maxLength={24}
+          onChange={(e) => {
+            setNick(e.target.value);
+            setMsg(null);
+          }}
+          placeholder="e.g. DaxNinja"
+          className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none"
+        />
+        <button type="button" disabled={busy} onClick={() => void save()} className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-60">
+          Save
+        </button>
+      </div>
+      <label className="mt-3 flex items-center gap-2 text-sm text-slate-700">
+        <input
+          type="checkbox"
+          checked={hidden}
+          onChange={(e) => {
+            setHidden(e.target.checked);
+            setMsg(null);
+          }}
+        />
+        Hide me from the leaderboard
+      </label>
+      {msg && (
+        <p role={msg.ok ? 'status' : 'alert'} className={`mt-2 text-sm ${msg.ok ? 'text-emerald-700' : 'text-red-700'}`}>
+          {msg.text}
+        </p>
+      )}
+    </section>
   );
 }

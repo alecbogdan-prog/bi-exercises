@@ -14,11 +14,13 @@ interface Props {
   spec: VisualSpec;
   onSpec: (s: VisualSpec) => void;
   onAdd: (item: DragItem, scope: FilterScope) => void;
+  /** Simple view: choose the field from a list instead of dragging it in. */
+  pickToAdd?: boolean;
 }
 
 const same = (a: FieldRef, b: FieldRef) => a.table === b.table && a.column === b.column;
 
-export function FiltersPane({ engine, spec, onSpec, onAdd }: Props) {
+export function FiltersPane({ engine, spec, onSpec, onAdd, pickToAdd = false }: Props) {
   const [q, setQ] = useState('');
   const match = (s: string) => !q || s.toLowerCase().includes(q.toLowerCase());
 
@@ -61,7 +63,7 @@ export function FiltersPane({ engine, spec, onSpec, onAdd }: Props) {
               onRemove={() => remove(c)}
             />
           ))}
-        <DropZone onDrop={(item) => onAdd(item, scope)} />
+        {pickToAdd ? <FieldPicker engine={engine} onPick={(item) => onAdd(item, scope)} /> : <DropZone onDrop={(item) => onAdd(item, scope)} />}
       </div>
     </div>
   );
@@ -95,6 +97,33 @@ export function FiltersPane({ engine, spec, onSpec, onAdd }: Props) {
         spec.filters.filter((f) => scopeOf(f) === 'all'),
       )}
     </div>
+  );
+}
+
+function FieldPicker({ engine, onPick }: { engine: Engine; onPick: (i: DragItem) => void }) {
+  return (
+    <select
+      value=""
+      aria-label="Add a field to filter on"
+      onChange={(e) => {
+        const [table, column] = e.target.value.split('\u0000');
+        if (table && column) onPick({ kind: 'column', table, column });
+      }}
+      className="h-[30px] w-full rounded-[2px] border border-dashed border-d-strong bg-white px-1.5 text-[12px] text-d-faint"
+    >
+      <option value="">+ Add a field…</option>
+      {engine.model.tables.map((t) => (
+        <optgroup key={t.name} label={t.name}>
+          {t.columns
+            .filter((c) => !c.hidden)
+            .map((c) => (
+              <option key={c.name} value={`${t.name}\u0000${c.name}`}>
+                {c.name}
+              </option>
+            ))}
+        </optgroup>
+      ))}
+    </select>
   );
 }
 

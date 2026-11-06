@@ -91,7 +91,7 @@ function sortMenu(spec: VisualSpec, onSpec: (s: VisualSpec) => void): MenuItem[]
   return items;
 }
 
-export function ReportView({ engine, spec, allMeasures, selection, onSelect, onSpec, onRemoveSlicer, onFiltersClick, onNewMeasure }: Props) {
+export function ReportView({ engine, spec, allMeasures, selection, onSelect, onSpec, onRemoveSlicer, onFiltersClick, onNewMeasure, fill = false }: Props & { fill?: boolean }) {
   const wrap = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 800, h: 450 });
   const [menu, setMenu] = useState<{ x: number; y: number; items: MenuItem[] } | null>(null);
@@ -109,12 +109,14 @@ export function ReportView({ engine, spec, allMeasures, selection, onSelect, onS
     const ro = new ResizeObserver(([e]) => {
       const W = e.contentRect.width - 32;
       const H = e.contentRect.height - 32;
+      // `fill`: the page takes all the room it has (simple view); otherwise it keeps Power BI's 16:9 page.
+      if (fill) return setSize({ w: Math.max(320, W), h: Math.max(220, H) });
       const w = Math.max(320, Math.min(W, (H * 16) / 9));
       setSize({ w, h: (w * 9) / 16 });
     });
     ro.observe(wrap.current);
     return () => ro.disconnect();
-  }, []);
+  }, [fill]);
 
   const missing = spec.values.filter((v) => v.kind === 'measure' && !allMeasures.some((m) => m.name.toLowerCase() === v.name.toLowerCase()));
   const shown: VisualSpec = { ...spec, values: spec.values.filter((v) => !missing.includes(v)) };
@@ -163,7 +165,7 @@ export function ReportView({ engine, spec, allMeasures, selection, onSelect, onS
           testId="visual"
           selected={visualSelected}
           onSelect={() => onSelect({ kind: 'visual' })}
-          style={hasSlicers ? { left: '21%', top: '4%', width: '76%', height: '88%' } : { left: '2.5%', top: '4%', width: '78%', height: '88%' }}
+          style={hasSlicers ? { left: '21%', top: '4%', width: '76%', height: '88%' } : fill ? { left: '2%', top: '7%', width: '96%', height: '89%' } : { left: '2.5%', top: '4%', width: '78%', height: '88%' }}
           header={
             <>
               {hierarchy && (

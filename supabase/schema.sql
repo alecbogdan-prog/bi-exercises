@@ -163,3 +163,78 @@ grant execute on function public.claim_team_invites() to authenticated;
 grant execute on function public.my_team() to authenticated;
 grant execute on function public.team_progress(uuid) to authenticated;
 grant execute on function public.rename_team(uuid, text) to authenticated;
+
+-- ============================================================================
+-- Leaderboard: today's top scores and the longest running streaks, read from progress.data.points.
+-- Learners appear under a nickname they choose on the Account page (or a masked email until they do).
+-- ============================================================================
+create table if not exists public.profiles (
+  user_id uuid primary key references auth.users (id) on delete cascade default auth.uid(),
+  nickname text check (nickname is null or (length(nickname) between 2 and 24 and nickname ~ '^[A-Za-z0-9 _.-]+$')),
+  hide_from_leaderboard boolean not null default false,
+  updated_at timestamptz not null default now()
+);
+create unique index if not exists profiles_nickname_idx on public.profiles (lower(nickname));
+alter table public.profiles enable row level security;
+drop policy if exists "read own profile" on public.profiles;
+create policy "read own profile" on public.profiles for select to authenticated using (auth.uid() = user_id);
+drop policy if exists "insert own profile" on public.profiles;
+create policy "insert own profile" on public.profiles for insert to authenticated with check (auth.uid() = user_id);
+drop policy if exists "update own profile" on public.profiles;
+create policy "update own profile" on public.profiles for update to authenticated using (auth.uid() = user_id) with check (auth.uid() = user_id);
+revoke all on public.profiles from anon, authenticated;
+grant select, insert, update on public.profiles to authenticated;
+grant all on public.profiles to service_role;
+
+-- day: the visitor's local date (YYYY-MM-DD), since points are logged per local day. Must be within a day of the server's date.
+-- Returns kind 'points' (points earned that day) and kind 'streak' (consecutive days ending that day or the day before).
+create or replace function public.leaderboard(day text, top int default 5)
+returns table (kind text, rank int, name text, value int, is_me boolean)
+language plpgsql stable security definer set search_path = public as $$
+declare d date;
+begin
+  if day !~ '^\d{4}-\d{2}-\d{2}$' then raise exception 'bad day'; end if;
+  d := day::date;
+  if abs(d - (now() at time zone 'utc')::date) > 1 then raise exception 'bad day'; end if;
+  top := least(greatest(coalesce(top, 5), 1), 25);
+  return query
+  with learners as (
+    select p.user_id, p.data->'points'->'days' as days,
+           coalesce(pr.nickname, left(split_part(u.email, '@', 1), 3) || '***') as name
+      from public.progress p
+      join auth.users u on u.id = p.user_id
+      left join public.profiles pr on pr.user_id = p.user_id
+     where jsonb_typeof(p.data->'points'->'days') = 'object'
+       and not coalesce(pr.hide_from_leaderboard, false)
+  ),
+  scores as (
+    -- Each exercise pays at most 250 points once, so a day above 40,000 is not a real one.
+    select l.user_id, l.name, (l.days->>day)::int as v
+      from learners l
+     where (l.days->>day) ~ '^\d+$' and (l.days->>day)::int between 1 and 40000
+  ),
+  active_days as (
+    select l.user_id, l.name, k::date as dd
+      from learners l cross join lateral jsonb_object_keys(l.days) k
+     where k ~ '^\d{4}-\d{2}-\d{2}$' and k::date <= d
+  ),
+  runs as (
+    select a.user_id, a.name, max(a.dd) as last_day, count(*)::int as len
+      from (select x.*, x.dd - (row_number() over (partition by x.user_id order by x.dd))::int as grp from active_days x) a
+     group by a.user_id, a.name, a.grp
+  ),
+  streaks as (
+    select r.user_id, r.name, r.len as v from runs r where r.last_day >= d - 1
+  ),
+  ranked as (
+    select 'points'::text as k, s.user_id, s.name, s.v, (row_number() over (order by s.v desc, s.name))::int as rk from scores s
+    union all
+    select 'streak'::text, s.user_id, s.name, s.v, (row_number() over (order by s.v desc, s.name))::int from streaks s
+  )
+  select r.k, r.rk, r.name, r.v, (r.user_id = auth.uid())
+    from ranked r
+   where r.rk <= top or r.user_id = auth.uid()
+   order by r.k, r.rk;
+end $$;
+revoke execute on function public.leaderboard(text, int) from public;
+grant execute on function public.leaderboard(text, int) to anon, authenticated;

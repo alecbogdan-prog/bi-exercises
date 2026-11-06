@@ -6,6 +6,9 @@ import { Chart } from '../components/Chart';
 import { DesktopShell } from '../components/desktop/DesktopShell';
 import type { Work } from '../components/desktop/DesktopShell';
 import { Header } from '../components/Layout';
+import { Logo } from '../components/icons';
+import { Leaderboard } from '../components/Leaderboard';
+import { useAccount } from '../lib/account';
 import { VISUAL_NAMES, checkExercise, queryResult } from '../exercises/checker';
 import type { QTable } from '../engine/query';
 import { TYPE_LABEL, stepNames } from '../engine/query';
@@ -19,7 +22,10 @@ import { baseEngine } from '../lib/base';
 import { Paragraphs, inline } from '../lib/md';
 import { awardPoints, clearWork, completedIds, loadWork, markCompleted, saveWork, startedIds, stats } from '../lib/storage';
 import { pointsFor } from '../lib/points';
-import { ChapterProgress, StatsChip, SuccessBar } from '../components/Progress';
+import { ActionBar, ChapterProgress, LessonList, ProgressBar, StatsChip } from '../components/Progress';
+import { canFocus, isPlainVisual, needsFilters } from '../components/focused/canFocus';
+import { nextClick } from '../components/focused/nextClick';
+import type { NextClick } from '../components/focused/nextClick';
 import { LockedEditor, ProUnlockCard } from '../components/ProLock';
 import { canOpen, hasPro } from '../lib/access';
 import { HintSpotlight } from '../components/HintSpotlight';
@@ -122,16 +128,46 @@ function QueryPreview({ table }: { table: QTable }) {
   );
 }
 
-function Section({ title, defaultOpen = false, children }: { title: string; defaultOpen?: boolean; children: ReactNode }) {
-  const [open, setOpen] = useState(defaultOpen);
+function Section({ title, open, onToggle, children }: { title: string; open: boolean; onToggle: () => void; children: ReactNode }) {
   return (
     <div className="border-t border-slate-200">
-      <button onClick={() => setOpen(!open)} className="flex w-full items-center justify-between py-2.5 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase hover:text-ink">
+      <button onClick={onToggle} aria-expanded={open} className="flex w-full items-center justify-between py-2.5 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase hover:text-ink">
         {title}
         <span className={`transition ${open ? 'rotate-90' : ''}`}>›</span>
       </button>
       {open && <div className="pb-3">{children}</div>}
     </div>
+  );
+}
+
+/** Slim top bar for the exercise page: breadcrumb instead of the full site menu, so the editor gets the room. */
+function ExerciseTopBar({ crumbs, right }: { crumbs: { label: string; to?: string }[]; right: ReactNode }) {
+  const { email } = useAccount();
+  return (
+    <header className="flex h-11 shrink-0 items-center gap-3 bg-ink px-4 text-sm text-white/70">
+      <Link to="/" className="shrink-0" title="Home">
+        <Logo className="h-6 w-6" />
+      </Link>
+      <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5">
+        {crumbs.map((c, i) => (
+          <span key={i} className="flex min-w-0 items-center gap-1.5">
+            {i > 0 && <span className="text-white/30">›</span>}
+            {c.to ? (
+              <Link to={c.to} className="truncate hover:text-white hover:underline">
+                {c.label}
+              </Link>
+            ) : (
+              <span className="truncate font-semibold text-white">{c.label}</span>
+            )}
+          </span>
+        ))}
+      </nav>
+      <div className="flex-1" />
+      {right}
+      <Link to={email ? '/account' : '/login'} className="hidden shrink-0 font-semibold hover:text-white md:block">
+        {email ? 'Account' : 'Log in'}
+      </Link>
+    </header>
   );
 }
 
@@ -142,12 +178,19 @@ function ExerciseView({ ex }: { ex: Exercise }) {
   const [work, setWork] = useState<Work>(() => (saved ? { ...saved, columns: saved.columns ?? [], report: saved.report ?? ex.report } : fresh()));
   const { spec, measures, columns } = work;
   const [result, setResult] = useState<CheckResult | null>(null);
+  const [misses, setMisses] = useState(0);
   const [solved, setSolved] = useState(() => completedIds().includes(ex.id));
   const [hints, setHints] = useState(0);
   const [spot, setSpot] = useState<number | null>(null);
+  const [showSteps, setShowSteps] = useState(false);
   const [showSolution, setShowSolution] = useState(false);
+  const [conceptOpen, setConceptOpen] = useState(ex.level === 'Beginner');
+  const [helpOpen, setHelpOpen] = useState(false);
   const [resetKey, setResetKey] = useState(0);
   const [panelOpen, setPanelOpen] = useState(true);
+  const [full, setFull] = useState(false);
+  const [guide, setGuide] = useState<NextClick | null>(null);
+  const [textHints, setTextHints] = useState(0);
   const [earned, setEarned] = useState<number | null>(null);
   const [myStats, setMyStats] = useState(() => stats());
   const [doneIds, setDoneIds] = useState(() => new Set(completedIds()));
@@ -156,7 +199,6 @@ function ExerciseView({ ex }: { ex: Exercise }) {
   const siblings = project ? project.steps : EXERCISES;
   const index = siblings.findIndex((e) => e.id === ex.id);
   const next = siblings[index + 1];
-  const prev = siblings[index - 1];
   const module = MODULES.find((m) => m.id === ex.module)!;
   const chapterTitle = project ? project.title : module.title;
   const chapterHref = project ? `/projects/${project.id}` : '/exercises';
@@ -195,79 +237,188 @@ function ExerciseView({ ex }: { ex: Exercise }) {
     if (r.ok) {
       markCompleted(ex.id);
       setSolved(true);
-      setEarned(awardPoints(ex.id, pointsFor(ex, hints > 0 || showSolution)));
+      setEarned(awardPoints(ex.id, pointsFor(ex, hints > 0 || showSolution || showSteps)));
       setMyStats(stats());
       setDoneIds(new Set(completedIds()));
+    } else {
+      setMisses((n) => n + 1);
     }
+  };
+  const reset = () => {
+    clearWork(ex.id);
+    setWork(fresh());
+    setResult(null);
+    setResetKey((k) => k + 1);
+  };
+  const revealAnswer = () => {
+    setPanelOpen(true);
+    setHelpOpen(true);
+    setShowSolution(true);
   };
   const chapter = project ? project.steps : EXERCISES.filter((e) => e.module === ex.module);
   const started = new Set(startedIds());
   const lessonStatus = (id: string): LessonStatus => (doneIds.has(id) ? 'done' : started.has(id) || id === ex.id ? 'progress' : 'new');
+  const focus = ex.check.kind === 'dax' ? 'measure' : ex.check.kind === 'column' ? 'column' : ex.check.kind === 'query' ? 'query' : ex.check.kind === 'model' ? 'model' : ex.check.kind === 'pages' ? 'pages' : 'report';
+  const shellProps = {
+    base,
+    title: `${COMPANY} Sales Report`,
+    work,
+    given,
+    onChange,
+    focus,
+    querySource: ex.query?.source,
+    starterSteps: ex.query?.starterSteps,
+    starterRelationships: ex.starterRelationships,
+    columnTable: ex.check.kind === 'column' ? ex.check.table : undefined,
+  } as const;
+  const shell = <DesktopShell key={resetKey} {...shellProps} filtersOpenInitially={ex.module === 'filters'} />;
+  const plainVisual = isPlainVisual(ex);
+  // Simple view hint: point at the next click when we can work it out, otherwise the exercise's own hints in order.
+  const showHint = () => {
+    setHints((h) => h + 1);
+    const g = nextClick(ex, work.spec);
+    if (g) return setGuide(g);
+    if (!ex.hints.length) return;
+    const i = Math.min(textHints, ex.hints.length - 1);
+    setTextHints(i + 1);
+    const t = ex.hintTargets?.[i];
+    if (t && document.querySelector(t.target)) setGuide({ hint: t, text: ex.hints[i].replace(/\*\*|`/g, '') });
+  };
+
+  const focusedView = canFocus(ex) && !locked && !full;
+  const crumbs = [{ label: 'Exercises', to: '/exercises' }, project ? { label: project.title, to: chapterHref } : { label: module.title, to: '/exercises' }, { label: ex.title }];
+  const actionBar = (
+    <ActionBar
+      result={result}
+      misses={misses}
+      points={earned}
+      nextId={next?.id}
+      done={project ? { href: chapterHref, label: 'See your finished dashboard 🎉' } : undefined}
+      onCheck={check}
+      onReset={reset}
+      onShowAnswer={focusedView ? (plainVisual ? showHint : () => setShowSolution(true)) : revealAnswer}
+      onDismiss={() => setResult(null)}
+      inset={focusedView}
+    />
+  );
+
+  if (focusedView) {
+    const chapterDone = chapter.filter((l) => doneIds.has(l.id)).length;
+    return (
+      <div className="flex h-full flex-col">
+        <ExerciseTopBar crumbs={crumbs} right={<StatsChip stats={myStats} />} />
+        <div className="min-h-0 flex-1 overflow-y-auto bg-cream">
+          <div className="mx-auto grid max-w-[1600px] gap-5 p-4 lg:h-full lg:grid-cols-[300px_minmax(0,1fr)_280px] lg:p-6">
+            <aside className="order-3 lg:order-1 lg:min-h-0 lg:overflow-y-auto">
+              <LessonList lessons={chapter} currentId={ex.id} status={lessonStatus} />
+            </aside>
+            <main className="order-1 flex min-w-0 flex-col lg:order-2 lg:min-h-0">
+              <h1 className="text-2xl font-bold tracking-tight text-ink">{ex.title}</h1>
+              <div className="mt-1 mb-4 flex items-center gap-3">
+                <span className="w-10 text-sm font-medium text-slate-600 tabular-nums">{Math.round((chapterDone / chapter.length) * 100)}%</span>
+                <ProgressBar value={chapterDone / chapter.length} className="flex-1" />
+              </div>
+              <div className="flex flex-col rounded-xl border border-slate-300 bg-white p-4 shadow-sm lg:min-h-0 lg:flex-1" data-testid="task-card">
+                <Paragraphs text={ex.lesson} className="lesson text-[17px] leading-relaxed text-slate-800" />
+                <ol className="task mt-3 list-decimal space-y-1 pl-6 text-[17px] font-semibold text-ink">
+                  {ex.task.map((t, i) => (
+                    <li key={i}>{inline(t)}</li>
+                  ))}
+                </ol>
+                {(ex.check.kind === 'model' || needsFilters(ex)) && (
+                  <p className="mt-2 text-[15px] text-slate-500">
+                    {ex.check.kind === 'model'
+                      ? 'No dragging needed: click a column, then the matching column in the other table.'
+                      : 'No dragging needed: in Filters, choose the field from “+ Add a field…”.'}
+                  </p>
+                )}
+                <div className="mt-4 h-[460px] overflow-x-auto lg:h-auto lg:min-h-[420px] lg:flex-1">
+                  <DesktopShell key={resetKey} {...shellProps} filtersOpenInitially={needsFilters(ex)} showFilters={needsFilters(ex)} minimal />
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px]">
+                  {(plainVisual || textHints < ex.hints.length || hints === 0) && (
+                    <button onClick={showHint} className="font-medium text-brand-700 hover:underline" data-testid="show-hint">
+                      {hints === 0 ? 'Show a hint' : plainVisual ? 'Show me the next step' : 'Another hint'}
+                    </button>
+                  )}
+                  {!plainVisual && (
+                    <button onClick={() => setShowSolution(!showSolution)} className="text-slate-500 hover:underline" data-testid="show-solution">
+                      {showSolution ? 'Hide answer' : 'Show answer'}
+                    </button>
+                  )}
+                  <span className="flex-1" />
+                  <button onClick={() => setFull(true)} className="text-slate-500 hover:text-ink hover:underline" data-testid="open-full">
+                    Open in full Power BI ↗
+                  </button>
+                </div>
+                {ex.hints.slice(0, textHints).map((h, i) => (
+                  <div key={i} className="lesson mt-2 rounded-md bg-amber-50 px-3 py-2 text-[15px] text-amber-900">
+                    💡 {inline(h)}
+                  </div>
+                ))}
+                {showSolution && !plainVisual && (
+                  <pre className="mt-2 overflow-x-auto rounded-md bg-ink p-3 font-mono text-sm leading-6 whitespace-pre-wrap text-slate-100">{describeSolution(ex).join('\n')}</pre>
+                )}
+              </div>
+            </main>
+            <aside className="order-2 lg:order-3 lg:min-h-0 lg:overflow-y-auto">
+              <Leaderboard stats={myStats} compact />
+            </aside>
+          </div>
+        </div>
+        {actionBar}
+        {guide && <HintSpotlight hint={guide.hint} text={guide.text} onClose={() => setGuide(null)} />}
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full flex-col">
-      <Header>
-        <StatsChip stats={myStats} />
-        <div className="flex items-center gap-1 text-sm">
-          {prev && (
-            <Link to={`/exercise/${prev.id}`} className="rounded-md px-2 py-1 text-slate-500 hover:bg-slate-100 hover:text-ink">
-              ← Prev
-            </Link>
-          )}
-          <span className="hidden text-slate-400 sm:inline">
-            {project ? 'Step ' : ''}{index + 1} / {siblings.length}
-          </span>
-          {next && (
-            <Link to={`/exercise/${next.id}`} className="rounded-md px-2 py-1 text-slate-500 hover:bg-slate-100 hover:text-ink">
-              Next →
-            </Link>
-          )}
-        </div>
-      </Header>
+      <ExerciseTopBar crumbs={crumbs} right={<StatsChip stats={myStats} />} />
       <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
         {panelOpen ? (
           <aside className="shrink-0 border-b border-slate-200 bg-white lg:w-[340px] lg:overflow-y-auto lg:border-r lg:border-b-0" data-testid="exercise-panel">
             <div className="p-4">
-              <div className="mb-1 flex items-center gap-2 text-xs text-slate-500">
-                <Link to={chapterHref} className="hover:text-brand-700">
-                  {project ? `Project · ${project.title}` : module.title}
-                </Link>
-                <span>·</span>
-                <span>{ex.level}</span>
-                {!ex.free && !hasPro() && <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">PRO</span>}
-                {solved && <span className="rounded bg-brand-100 px-1.5 py-0.5 text-[10px] font-semibold text-brand-700">✓ Solved</span>}
-                <span className="flex-1" />
+              <div className="mb-1 flex items-start gap-2">
+                <h1 className="flex-1 text-xl font-bold tracking-tight">{ex.title}</h1>
                 <button onClick={() => setPanelOpen(false)} className="hidden rounded px-1.5 text-slate-400 hover:bg-slate-100 hover:text-ink lg:block" title="Hide the exercise panel">
                   «
                 </button>
               </div>
-              <h1 className="mb-4 text-xl font-bold tracking-tight">{ex.title}</h1>
+              <div className="mb-3 flex items-center gap-2 text-xs text-slate-500">
+                <span>{ex.level}</span>
+                {!ex.free && !hasPro() && <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800">PRO</span>}
+                {solved && <span className="rounded bg-brand-100 px-1.5 py-0.5 text-[10px] font-semibold text-brand-700">✓ Solved</span>}
+                {canFocus(ex) && !locked && (
+                  <button onClick={() => setFull(false)} className="ml-auto font-semibold text-brand-700 hover:underline" data-testid="back-simple">
+                    ← Simple view
+                  </button>
+                )}
+              </div>
               <ChapterProgress title={chapterTitle} lessons={chapter} currentId={ex.id} status={lessonStatus} kind={project ? 'project' : 'chapter'} />
 
-              {sc && (
-                <div className="mb-4 rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200" data-testid="scenario">
-                  <div className="mb-2 flex items-center gap-2">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white" style={{ background: sc.from.color }}>
-                      {sc.from.initials}
-                    </span>
-                    <div className="min-w-0 leading-tight">
-                      <div className="text-sm font-semibold">{sc.from.name}</div>
-                      <div className="truncate text-[11px] text-slate-500">
-                        {sc.from.role} · {COMPANY}
+              <div className="mb-4 rounded-xl border border-slate-200 p-3" data-testid="task-card">
+                {sc ? (
+                  <div data-testid="scenario">
+                    <div className="mb-2 flex items-center gap-2">
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white" style={{ background: sc.from.color }}>
+                        {sc.from.initials}
+                      </span>
+                      <div className="min-w-0 truncate text-xs text-slate-500">
+                        <b className="text-ink">{sc.from.name}</b> · {sc.from.role}
                       </div>
                     </div>
-                    <span className="ml-auto shrink-0 text-[11px] text-slate-400">{sc.time}</span>
+                    <p className="text-sm leading-relaxed text-slate-800">{sc.message}</p>
+                    <p className="mt-2 text-sm font-semibold text-ink">{sc.deliver}</p>
                   </div>
-                  <p className="rounded-lg rounded-tl-sm bg-white px-3 py-2 text-sm leading-relaxed text-slate-800 shadow-sm ring-1 ring-slate-200">{sc.message}</p>
-                </div>
-              )}
-
-              {sc && (
-                <div className="mb-4 flex gap-2 rounded-lg border border-brand-200 bg-brand-50 px-3 py-2 text-sm text-brand-700">
-                  <span className="font-semibold">Deliver:</span>
-                  <span className="text-slate-800">{sc.deliver}</span>
-                </div>
-              )}
+                ) : (
+                  <ol className="task list-decimal space-y-1 pl-5 text-sm">
+                    {ex.task.map((t, i) => (
+                      <li key={i}>{inline(t)}</li>
+                    ))}
+                  </ol>
+                )}
+              </div>
 
               <div className="mb-4">
                 <div className="mb-1.5 text-xs font-semibold tracking-wide text-slate-500 uppercase">{ex.check.kind === 'pages' ? 'What to set up' : 'Expected result'}</div>
@@ -299,59 +450,10 @@ function ExerciseView({ ex }: { ex: Exercise }) {
                 <ProUnlockCard ex={ex} />
               ) : (
                 <>
-                  <div className="mb-3 flex flex-wrap gap-2">
-                    <button onClick={check} className="flex-1 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-brand-600">
-                      Check answer
-                    </button>
-                    <button
-                      onClick={() => {
-                        clearWork(ex.id);
-                        setWork(fresh());
-                        setResult(null);
-                        setResetKey((k) => k + 1);
-                      }}
-                      className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-600 hover:border-slate-400"
-                    >
-                      Reset
-                    </button>
-                  </div>
-
-                  {result && (
-                    <div className={`mb-3 rounded-lg p-3 text-sm ${result.ok ? 'bg-brand-50 text-brand-700 ring-1 ring-brand-200' : 'bg-red-50 text-red-700 ring-1 ring-red-200'}`}>
-                      {result.ok ? (
-                        <>
-                          <div className="font-semibold">Correct ✓</div>
-                          <p className="mt-1 text-slate-700">{ex.explanation}</p>
-                          {next && (
-                            <Link to={`/exercise/${next.id}`} className="mt-3 inline-block rounded-md bg-brand-600 px-3 py-1.5 font-semibold text-white hover:bg-brand-700">
-                              Next exercise →
-                            </Link>
-                          )}
-                        </>
-                      ) : (
-                        <>
-                          <div className="mb-1 font-semibold">Not quite yet</div>
-                          <ul className="list-disc space-y-1 pl-5">
-                            {result.messages.map((m, i) => (
-                              <li key={i}>{m}</li>
-                            ))}
-                          </ul>
-                        </>
-                      )}
-                    </div>
-                  )}
-
-                  <Section title="Concept" defaultOpen={ex.level === 'Beginner'}>
+                  <Section title="Concept" open={conceptOpen} onToggle={() => setConceptOpen(!conceptOpen)}>
                     <Paragraphs text={ex.lesson} className="lesson text-sm leading-relaxed text-slate-700" />
                   </Section>
-                  <Section title="Step-by-step help">
-                    <ol className="task list-decimal space-y-1 pl-5 text-sm">
-                      {ex.task.map((t, i) => (
-                        <li key={i}>{inline(t)}</li>
-                      ))}
-                    </ol>
-                  </Section>
-                  <Section title="Hints & solution">
+                  <Section title="Stuck? Hints & solution" open={helpOpen} onToggle={() => setHelpOpen(!helpOpen)}>
                     <div className="space-y-2 text-sm">
                       {ex.hints.slice(0, hints).map((h, i) => (
                         <div key={i} className="lesson rounded-md bg-amber-50 px-3 py-2 text-amber-900">
@@ -363,27 +465,43 @@ function ExerciseView({ ex }: { ex: Exercise }) {
                           )}
                         </div>
                       ))}
-                      <div className="flex gap-3">
+                      {showSteps && sc && (
+                        <ol className="task list-decimal space-y-1 rounded-md bg-slate-50 py-2 pr-2 pl-7" data-testid="steps">
+                          {ex.task.map((t, i) => (
+                            <li key={i}>{inline(t)}</li>
+                          ))}
+                        </ol>
+                      )}
+                      {showSolution && <pre className="overflow-x-auto rounded-md bg-ink p-3 font-mono text-xs leading-5 whitespace-pre-wrap text-slate-100">{describeSolution(ex).join('\n')}</pre>}
+                      <div className="flex flex-wrap gap-x-4 gap-y-1">
                         {hints < ex.hints.length && (
                           <button
                             onClick={() => {
                               setHints(hints + 1);
                               setSpot(ex.hintTargets?.[hints] ? hints : null);
                             }}
-                            className="text-brand-700 hover:underline"
+                            className="font-medium text-brand-700 hover:underline"
                           >
                             {hints ? 'Another hint' : 'Show a hint'}
+                          </button>
+                        )}
+                        {sc && (
+                          <button onClick={() => setShowSteps(!showSteps)} className="text-slate-500 hover:underline">
+                            {showSteps ? 'Hide steps' : 'Step by step'}
                           </button>
                         )}
                         <button onClick={() => setShowSolution(!showSolution)} className="text-slate-500 hover:underline">
                           {showSolution ? 'Hide solution' : 'Show solution'}
                         </button>
                       </div>
-                      {showSolution && <pre className="overflow-x-auto rounded-md bg-ink p-3 font-mono text-xs leading-5 whitespace-pre-wrap text-slate-100">{describeSolution(ex).join('\n')}</pre>}
+                      <p className="text-xs text-slate-400">Solving without help earns 50 bonus points.</p>
                     </div>
                   </Section>
                 </>
               )}
+              <div className="mt-4">
+                <Leaderboard stats={myStats} compact />
+              </div>
             </div>
           </aside>
         ) : (
@@ -399,43 +517,11 @@ function ExerciseView({ ex }: { ex: Exercise }) {
           <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-900 lg:hidden">
             The report editor works best on a computer. On a phone, scroll sideways inside the window.
           </div>
-          {locked ? (
-            <LockedEditor ex={ex}>
-              <DesktopShell
-                key={resetKey}
-                base={base}
-                title={`${COMPANY} Sales Report`}
-                work={work}
-                given={given}
-                onChange={onChange}
-                focus={ex.check.kind === 'dax' ? 'measure' : ex.check.kind === 'column' ? 'column' : ex.check.kind === 'query' ? 'query' : ex.check.kind === 'model' ? 'model' : ex.check.kind === 'pages' ? 'pages' : 'report'}
-                querySource={ex.query?.source}
-                starterSteps={ex.query?.starterSteps}
-                starterRelationships={ex.starterRelationships}
-                columnTable={ex.check.kind === 'column' ? ex.check.table : undefined}
-                filtersOpenInitially={ex.module === 'filters'}
-              />
-            </LockedEditor>
-          ) : (
-            <DesktopShell
-              key={resetKey}
-              base={base}
-              title={`${COMPANY} Sales Report`}
-              work={work}
-              given={given}
-              onChange={onChange}
-              focus={ex.check.kind === 'dax' ? 'measure' : ex.check.kind === 'column' ? 'column' : ex.check.kind === 'query' ? 'query' : ex.check.kind === 'model' ? 'model' : ex.check.kind === 'pages' ? 'pages' : 'report'}
-              querySource={ex.query?.source}
-              starterSteps={ex.query?.starterSteps}
-              starterRelationships={ex.starterRelationships}
-              columnTable={ex.check.kind === 'column' ? ex.check.table : undefined}
-              filtersOpenInitially={ex.module === 'filters'}
-            />
-          )}
+          {locked ? <LockedEditor ex={ex}>{shell}</LockedEditor> : shell}
         </div>
       </div>
+      {!locked && actionBar}
       {spot !== null && !locked && ex.hintTargets?.[spot] && <HintSpotlight hint={ex.hintTargets[spot]!} text={ex.hints[spot].replace(/\*\*|`/g, '')} onClose={() => setSpot(null)} />}
-      {result?.ok && earned !== null && <SuccessBar points={earned} nextId={next?.id} onClose={() => setEarned(null)} done={project ? { href: chapterHref, label: 'See your finished dashboard 🎉' } : undefined} />}
     </div>
   );
 }

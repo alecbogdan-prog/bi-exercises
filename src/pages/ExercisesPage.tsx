@@ -8,6 +8,7 @@ import { ProgressBar } from '../components/Progress';
 import { LockIcon } from '../components/ProLock';
 import { ProjectCards } from '../components/ProjectCards';
 import { hasPro } from '../lib/access';
+import { Leaderboard } from '../components/Leaderboard';
 
 export function ExerciseList() {
   const done = new Set(completedIds());
@@ -34,6 +35,7 @@ export function ExerciseList() {
           <b className="tabular-nums">{s.streak}</b> <span className="text-slate-500">day streak</span>
         </div>
       </div>
+      <Leaderboard stats={s} />
       <section>
         <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
           <div>
