@@ -48,6 +48,8 @@ export function ModelView({
   const [sel, setSel] = useState<Relationship | null>(null);
   const [pending, setPending] = useState<Relationship | null>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
+  /** Click-to-connect: the column clicked first, waiting for its partner in another table. */
+  const [linkFrom, setLinkFrom] = useState<{ table: string; column: string } | null>(null);
   const rels = base.model.relationships;
   const tables = base.model.tables;
   const pos = (name: string, i: number) => POS[name] ?? { x: 30 + i * 230, y: 700 };
@@ -69,6 +71,12 @@ export function ModelView({
   const W = 980;
   const H = Math.max(...tables.map((t, i) => pos(t.name, i).y + height(t.name))) + 40;
   const selected = sel && rels.find((r) => same(r, sel));
+  const connect = (src: { table: string; column: string }, dst: { table: string; column: string }) => {
+    const r = orientRelationship(base, src, dst);
+    if (typeof r === 'string') return onToast(r);
+    if (rels.some((x) => same(x, r))) return onToast('This relationship already exists.');
+    setPending(r);
+  };
 
   return (
     <div className="flex min-h-0 flex-1" data-testid="model-view">
@@ -153,16 +161,20 @@ export function ModelView({
                           e.preventDefault();
                           setDropTarget(null);
                           try {
-                            const src = JSON.parse(e.dataTransfer.getData(REL_MIME)) as { table: string; column: string };
-                            const r = orientRelationship(base, src, { table: t.name, column: c.name });
-                            if (typeof r === 'string') return onToast(r);
-                            if (rels.some((x) => same(x, r))) return onToast('This relationship already exists.');
-                            setPending(r);
+                            connect(JSON.parse(e.dataTransfer.getData(REL_MIME)) as { table: string; column: string }, { table: t.name, column: c.name });
                           } catch {
                             /* not a column drag */
                           }
                         }}
-                        className={`flex items-center gap-1.5 px-2 text-[12px] ${editable ? 'cursor-grab' : ''} ${key ? 'bg-[#deecf9] font-semibold' : ''} ${dropTarget === id ? 'bg-[#c7e0f4]' : ''} ${c.hidden ? 'text-d-faint' : ''}`}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={() => {
+                          if (!editable) return;
+                          const here = { table: t.name, column: c.name };
+                          if (!linkFrom || linkFrom.table === t.name) return setLinkFrom(linkFrom && linkFrom.column === c.name && linkFrom.table === t.name ? null : here);
+                          setLinkFrom(null);
+                          connect(linkFrom, here);
+                        }}
+                        className={`flex items-center gap-1.5 px-2 text-[12px] ${editable ? 'cursor-pointer hover:bg-d-hover' : ''} ${key ? 'bg-[#deecf9] font-semibold' : ''} ${dropTarget === id ? 'bg-[#c7e0f4]' : ''} ${linkFrom?.table === t.name && linkFrom.column === c.name ? 'bg-[#c7e0f4] font-semibold ring-1 ring-d-accent ring-inset' : ''} ${c.hidden ? 'text-d-faint' : ''}`}
                         style={{ height: ROW_H }}
                       >
                         <span className="flex w-4 justify-center text-d-sub">
@@ -206,7 +218,11 @@ export function ModelView({
         ) : (
           <>
             <p className="mb-3 text-d-sub">
-              {editable ? 'Drag a column onto the matching column of another table to create a relationship. Click a line to see or delete it.' : 'Select a relationship line to see its properties.'}
+              {editable
+                ? linkFrom
+                  ? `Now click the matching column in another table to connect it to ${linkFrom.table}[${linkFrom.column}].`
+                  : 'Click a column, then the matching column of another table, to create a relationship (or drag one onto the other). Click a line to see or delete it.'
+                : 'Select a relationship line to see its properties.'}
             </p>
             <div className="mb-1 font-semibold">Relationships ({rels.length})</div>
             <ul className="space-y-1" data-testid="rel-list">

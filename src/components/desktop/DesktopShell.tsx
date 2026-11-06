@@ -59,6 +59,13 @@ export interface DesktopProps {
   querySource?: string;
   starterSteps?: Step[];
   starterRelationships?: Relationship[];
+  /**
+   * Only the parts of Power BI a simple visual exercise needs: the report canvas, Visualizations and Data.
+   * No title bar, ribbon, view switcher, Filters pane, page tabs or status bar (like a lesson that shows just the spreadsheet).
+   */
+  minimal?: boolean;
+  /** Simple view: also show the Filters pane (filter exercises). */
+  showFilters?: boolean;
 }
 
 type View = 'report' | 'table' | 'model';
@@ -74,7 +81,7 @@ export function DesktopShell(props: DesktopProps) {
   return <SingleVisualShell {...props} />;
 }
 
-function SingleVisualShell({ base, title, work, given, onChange: onWork, focus, columnTable, filtersOpenInitially, querySource, starterSteps, starterRelationships }: DesktopProps) {
+function SingleVisualShell({ base, title, work, given, onChange: onWork, focus, columnTable, filtersOpenInitially, querySource, starterSteps, starterRelationships, minimal = false, showFilters = false }: DesktopProps) {
   const { spec, measures, columns } = work;
   const steps = work.steps ?? starterSteps ?? [];
   const rels = work.relationships ?? starterRelationships ?? base.model.relationships;
@@ -199,16 +206,54 @@ function SingleVisualShell({ base, title, work, given, onChange: onWork, focus, 
   const status = view === 'report' ? 'Page 1 of 1' : view === 'table' ? `Table view` : `Model view · ${modelBase.model.tables.length} tables · ${rels.length} relationships`;
 
   return (
-    <div className="desktop relative flex h-full min-h-[640px] min-w-[1100px] flex-col overflow-hidden bg-white" data-testid="desktop">
-      <TitleBar
-        title={`${title} - ${BRAND}`}
-        canUndo={past.current.length > 0}
-        canRedo={future.current.length > 0}
-        onUndo={undo}
-        onRedo={redo}
-        onSave={() => showToast('Your work is saved automatically.')}
-      />
-      <Ribbon onAction={onRibbon} panes={panes} onFile={() => showToast('The File menu is not available in the exercises.')} />
+    <div
+      className={`desktop relative flex flex-col overflow-hidden bg-white ${minimal ? 'h-full min-w-[700px] rounded-md border border-d-border' : 'h-full min-h-[640px] min-w-[1100px]'}`}
+      data-testid="desktop"
+    >
+      {!minimal && (
+        <TitleBar
+          title={`${title} - ${BRAND}`}
+          canUndo={past.current.length > 0}
+          canRedo={future.current.length > 0}
+          onUndo={undo}
+          onRedo={redo}
+          onSave={() => showToast('Your work is saved automatically.')}
+        />
+      )}
+      {!minimal && <Ribbon onAction={onRibbon} panes={panes} onFile={() => showToast('The File menu is not available in the exercises.')} />}
+      {minimal && focus !== 'report' && (
+        <div className="flex h-10 shrink-0 items-center gap-1 border-b border-d-border bg-d-ribbon px-2 text-[12px]" data-testid="mini-toolbar">
+          {(focus === 'column' || focus === 'model') &&
+            (
+              [
+                ['report', 'Report view', Ico.report],
+                ...(focus === 'column' ? ([['table', 'Table view', Ico.grid]] as const) : ([['model', 'Model view', Ico.model]] as const)),
+              ] as const
+            ).map(([v, label, Icon]) => (
+              <button
+                key={v}
+                onClick={() => setView(v)}
+                aria-pressed={view === v}
+                className={`flex h-8 items-center gap-1.5 rounded-[4px] px-2.5 ${view === v ? 'bg-white font-semibold text-d-text shadow-sm' : 'text-d-sub hover:bg-d-hover'}`}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </button>
+            ))}
+          {(focus === 'measure' || focus === 'column') && (
+            <button onClick={() => (focus === 'measure' ? newMeasure() : newColumn())} className="flex h-8 items-center gap-1.5 rounded-[4px] px-2.5 text-d-text hover:bg-d-hover" data-testid="mini-new">
+              <Ico.calculator className="h-4 w-4 text-d-sub" />
+              {focus === 'measure' ? 'New measure' : 'New column'}
+            </button>
+          )}
+          {focus === 'query' && (
+            <button onClick={() => setPqOpen(true)} className="flex h-8 items-center gap-1.5 rounded-[4px] px-2.5 text-d-text hover:bg-d-hover">
+              <Ico.table className="h-4 w-4 text-d-sub" />
+              Transform data
+            </button>
+          )}
+        </div>
+      )}
       {editor && view !== 'model' && (
         <FormulaBar
           key={`${editor.mode}|${editor.table}|${editor.editing ?? 'new'}|${editor.text}`}
@@ -233,7 +278,7 @@ function SingleVisualShell({ base, title, work, given, onChange: onWork, focus, 
         />
       )}
       <div className="flex min-h-0 flex-1">
-        <nav className="flex w-12 shrink-0 flex-col items-center gap-1 border-r border-d-border bg-d-ribbon pt-2">
+        <nav className={`${minimal ? 'hidden' : 'flex'} w-12 shrink-0 flex-col items-center gap-1 border-r border-d-border bg-d-ribbon pt-2`}>
           {(
             [
               ['report', 'Report view', Ico.report],
@@ -270,8 +315,9 @@ function SingleVisualShell({ base, title, work, given, onChange: onWork, focus, 
                 }}
                 onFiltersClick={() => setPanes({ ...panes, filters: true })}
                 onNewMeasure={newMeasure}
+                fill={minimal}
               />
-              <PageTabs onAdd={() => showToast('This exercise uses a single report page.')} />
+              {!minimal && <PageTabs onAdd={() => showToast('This exercise uses a single report page.')} />}
             </>
           )}
           {view === 'table' && <TableView base={modelBase} table={tableSel} />}
@@ -282,10 +328,12 @@ function SingleVisualShell({ base, title, work, given, onChange: onWork, focus, 
 
         {view === 'report' && (
           <>
-            <Pane title="Filters" open={panes.filters} onToggle={() => setPanes({ ...panes, filters: !panes.filters })} width={210} testId="pane-filters">
-              <FiltersPane engine={engine} spec={spec} onSpec={(s) => commit(s)} onAdd={(item, scope) => apply(addFilter(spec, item, scope))} />
-            </Pane>
-            <Pane title="Visualizations" open={panes.viz} onToggle={() => setPanes({ ...panes, viz: !panes.viz })} width={236} testId="pane-viz">
+            {(!minimal || showFilters) && (
+              <Pane title="Filters" open={panes.filters} onToggle={() => setPanes({ ...panes, filters: !panes.filters })} width={210} testId="pane-filters">
+                <FiltersPane engine={engine} spec={spec} onSpec={(s) => commit(s)} onAdd={(item, scope) => apply(addFilter(spec, item, scope))} pickToAdd={minimal} />
+              </Pane>
+            )}
+            <Pane title="Visualizations" open={panes.viz} onToggle={() => setPanes({ ...panes, viz: !panes.viz })} width={minimal ? 200 : 236} testId="pane-viz">
               <VisualizationsPane
                 engine={engine}
                 spec={spec}
@@ -306,7 +354,7 @@ function SingleVisualShell({ base, title, work, given, onChange: onWork, focus, 
           </>
         )}
         {view !== 'model' && (
-          <Pane title="Data" open={panes.data} onToggle={() => setPanes({ ...panes, data: !panes.data })} width={220} testId="pane-data">
+          <Pane title="Data" open={panes.data} onToggle={() => setPanes({ ...panes, data: !panes.data })} width={minimal ? 180 : 220} testId="pane-data">
             <DataPane
               engine={modelBase}
               spec={view === 'report' ? spec : null}
@@ -327,6 +375,7 @@ function SingleVisualShell({ base, title, work, given, onChange: onWork, focus, 
                 showToast(`Measure "${m.name}" deleted.`);
               }}
               onOpenColumn={(c) => setEditor({ mode: 'column', table: c.table, text: `${c.name} = ${c.expression}`, editing: c.name })}
+              clickToTick={minimal}
               onDeleteColumn={(c) => {
                 commit(removeColumnEverywhere(spec, c.table, c.name), measures, columns.filter((x) => !(x.table === c.table && x.name === c.name)));
                 showToast(`Column "${c.name}" deleted.`);
@@ -335,7 +384,7 @@ function SingleVisualShell({ base, title, work, given, onChange: onWork, focus, 
           </Pane>
         )}
       </div>
-      <StatusBar left={status} />
+      {!minimal && <StatusBar left={status} />}
       {pqOpen && querySource && (
         <PowerQueryEditor
           source={querySource}

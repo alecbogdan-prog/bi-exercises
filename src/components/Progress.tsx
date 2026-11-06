@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { Exercise } from '../exercises/types';
 import type { Stats } from '../lib/storage';
+import type { CheckResult } from '../exercises/checker';
 
 export type LessonStatus = 'done' | 'progress' | 'new';
 
@@ -38,7 +39,7 @@ export function ChapterProgress({
   const done = lessons.filter((l) => status(l.id) === 'done').length;
   const index = lessons.findIndex((l) => l.id === currentId);
   return (
-    <div className="mb-4 rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200" data-testid="chapter-progress">
+    <div className="mb-4" data-testid="chapter-progress">
       <button onClick={() => setOpen(!open)} className="flex w-full items-center justify-between gap-2 text-left" aria-expanded={open}>
         <span className="min-w-0">
           <span className="block text-[11px] font-semibold tracking-wide text-slate-500 uppercase">
@@ -80,6 +81,32 @@ export function ChapterProgress({
   );
 }
 
+/** Always-visible lesson list for the focused exercise layout (like a course sidebar). */
+export function LessonList({ lessons, currentId, status }: { lessons: Exercise[]; currentId: string; status: (id: string) => LessonStatus }) {
+  return (
+    <ol className="divide-y divide-slate-100 overflow-hidden rounded-xl bg-white ring-1 ring-slate-200" data-testid="lesson-list">
+      {lessons.map((l, i) => {
+        const s = status(l.id);
+        const current = l.id === currentId;
+        return (
+          <li key={l.id}>
+            <Link
+              to={`/exercise/${l.id}`}
+              aria-current={current ? 'page' : undefined}
+              className={`flex items-center gap-2 px-3 py-2 text-[13px] ${current ? 'border-l-4 border-brand-500 bg-brand-50 pl-2 font-semibold text-ink' : 'text-slate-700 hover:bg-slate-50'}`}
+            >
+              <StatusBadge s={s} />
+              <span className="min-w-0 flex-1 truncate">
+                {i + 1}. {l.title}
+              </span>
+            </Link>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 /** Small points/streak summary for the header. */
 export function StatsChip({ stats }: { stats: Stats }) {
   return (
@@ -95,46 +122,122 @@ export function StatsChip({ stats }: { stats: Stats }) {
   );
 }
 
-/** Bottom bar shown after a correct answer. Enter continues to the next lesson. */
-export function SuccessBar({ points, nextId, onClose, done }: { points: number; nextId?: string; onClose: () => void; done?: { href: string; label: string } }) {
+function typing(el: EventTarget | null): boolean {
+  const t = el as HTMLElement | null;
+  return !!t && (['TEXTAREA', 'INPUT', 'SELECT'].includes(t.tagName) || t.isContentEditable);
+}
+
+/**
+ * The exercise page's bottom bar: Skip and Reset on the left, Check answer on the right.
+ * After a check it turns into the feedback: what is still wrong, or "Correct!" with the points and Continue.
+ * Keys: Ctrl/⌘+Enter checks from anywhere; Enter (outside a text field) checks, or continues once solved.
+ */
+export function ActionBar({
+  result,
+  misses,
+  points,
+  nextId,
+  done,
+  onCheck,
+  onReset,
+  onShowAnswer,
+  onDismiss,
+  inset = false,
+}: {
+  result: CheckResult | null;
+  misses: number;
+  points: number | null;
+  nextId?: string;
+  done?: { href: string; label: string };
+  onCheck: () => void;
+  onReset: () => void;
+  onShowAnswer: () => void;
+  onDismiss: () => void;
+  /** Line the bar's contents up with the middle column of the focused exercise layout. */
+  inset?: boolean;
+}) {
+  const ok = !!result?.ok;
+  const inner = `flex flex-wrap items-center gap-x-4 gap-y-2 py-3.5 ${inset ? 'mx-auto max-w-[1600px] px-4 lg:pr-[324px] lg:pl-[344px]' : 'px-4'}`;
   const [go, setGo] = useState(false);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const el = e.target as HTMLElement;
-      if (e.key !== 'Enter' || (el && ['TEXTAREA', 'INPUT', 'SELECT'].includes(el.tagName))) return;
-      if (nextId) setGo(true);
-      else onClose();
+      if (e.key !== 'Enter' || e.shiftKey || e.altKey) return;
+      const mod = e.ctrlKey || e.metaKey;
+      if (!mod && typing(e.target)) return;
+      e.preventDefault();
+      if (ok) {
+        if (nextId) setGo(true);
+      } else onCheck();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [nextId, onClose]);
+  }, [ok, nextId, onCheck]);
   useEffect(() => {
-    if (go && nextId) document.getElementById('continue-link')?.click();
-  }, [go, nextId]);
-  return (
-    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-brand-200 bg-brand-50/95 backdrop-blur" role="status" data-testid="success-bar">
-      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <span className="text-xl font-extrabold text-brand-700">Correct!</span>
-          {points > 0 ? <span className="font-semibold text-brand-600 tabular-nums">+{points} pts</span> : <span className="text-sm text-slate-500">Already solved, no new points</span>}
-          <Link to="/signup" className="text-sm font-medium text-slate-600 underline decoration-brand-300 underline-offset-2 hover:text-brand-700">
-            Save your progress: create a free account
-          </Link>
-        </div>
-        <div className="flex items-center gap-3">
-          <button onClick={onClose} className="text-sm text-slate-500 hover:text-ink">
-            Stay here
-          </button>
+    if (go) document.getElementById('continue-link')?.click();
+  }, [go]);
+
+  const skip = nextId && !ok && (
+    <Link to={`/exercise/${nextId}`} className="rounded-full border border-slate-300 bg-white px-5 py-2 text-[15px] font-semibold text-slate-600 hover:border-slate-400 hover:text-ink">
+      Skip
+    </Link>
+  );
+
+  if (ok) {
+    return (
+      <div className="shrink-0 border-t border-emerald-200 bg-emerald-50" role="status" data-testid="success-bar">
+        <div className={inner}>
+          <span className="text-xl font-extrabold text-emerald-700">Correct!</span>
+          {points ? <span className="font-semibold text-emerald-600 tabular-nums">+{points} pts</span> : <span className="text-sm text-slate-500">Already solved, no new points</span>}
+          <span className="flex-1" />
           {nextId ? (
-            <Link id="continue-link" to={`/exercise/${nextId}`} className="rounded-lg bg-brand-600 px-5 py-2.5 text-center font-semibold text-white shadow-sm hover:bg-brand-700">
-              Continue →<span className="block text-[10px] font-normal opacity-80">or press Enter</span>
+            <Link id="continue-link" to={`/exercise/${nextId}`} className="rounded-full bg-emerald-600 px-7 py-2.5 text-center text-base font-semibold text-white shadow-sm hover:bg-emerald-700" title="or press Enter">
+              Continue →
             </Link>
           ) : (
-            <Link to={done?.href ?? '/exercises'} className="rounded-lg bg-brand-600 px-5 py-2.5 font-semibold text-white hover:bg-brand-700">
+            <Link to={done?.href ?? '/exercises'} className="rounded-full bg-emerald-600 px-7 py-2.5 text-base font-semibold text-white hover:bg-emerald-700">
               {done?.label ?? 'All exercises done 🎉'}
             </Link>
           )}
         </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={`shrink-0 border-t ${result ? 'border-red-200 bg-red-50' : 'border-slate-200 bg-slate-100'}`} data-testid="action-bar">
+      <div className={inner}>
+        <div className="flex items-center gap-2">
+          {skip}
+          <button onClick={onReset} className="rounded-full px-3 py-2 text-[15px] font-medium text-slate-500 hover:text-ink" title="Start this exercise over">
+            Reset
+          </button>
+        </div>
+        <div className="min-w-0 flex-1 basis-64" aria-live="polite">
+          {result && (
+            <div className="flex items-start gap-3 text-sm" data-testid="feedback">
+              <span className="shrink-0 rounded-md bg-red-600 px-2 py-0.5 font-bold text-white">Not yet{misses > 1 ? ` (${misses})` : ''}</span>
+              <ul className="min-w-0 flex-1 space-y-0.5 text-red-900">
+                {result.messages.map((m, i) => (
+                  <li key={i}>{m}</li>
+                ))}
+              </ul>
+              <div className="flex shrink-0 gap-3">
+                {misses >= 2 && (
+                  <button onClick={onShowAnswer} className="font-semibold text-red-700 hover:underline">
+                    Show answer
+                  </button>
+                )}
+                <button onClick={onDismiss} className="text-red-400 hover:text-red-700" aria-label="Close feedback">
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+        <span className="ml-auto hidden text-sm text-slate-400 sm:inline">or press Enter</span>
+        <button onClick={onCheck} data-testid="check-answer" className="rounded-full bg-brand-500 px-7 py-2.5 text-center text-base font-semibold text-white shadow-sm hover:bg-brand-600" title="Enter, or Ctrl+Enter while typing">
+          Check answer
+        </button>
       </div>
     </div>
   );
