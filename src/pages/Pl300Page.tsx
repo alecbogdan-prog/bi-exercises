@@ -101,6 +101,9 @@ export default function Pl300Page() {
                 <Link to="/dax-functions" className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-ink hover:border-brand-500">
                   DAX functions list
                 </Link>
+                <Link to="/power-bi-assessment-test" className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-ink hover:border-brand-500">
+                  Interview assessment prep
+                </Link>
               </div>
             </div>
           </div>
