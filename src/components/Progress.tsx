@@ -141,7 +141,6 @@ export function ActionBar({
   onCheck,
   onReset,
   onShowAnswer,
-  onDismiss,
   inset = false,
 }: {
   result: CheckResult | null;
@@ -152,12 +151,11 @@ export function ActionBar({
   onCheck: () => void;
   onReset: () => void;
   onShowAnswer: () => void;
-  onDismiss: () => void;
-  /** Line the bar's contents up with the middle column of the focused exercise layout. */
-  inset?: boolean;
+  /** Line the bar's contents up with the middle column of the focused layout ('wide': no right-hand column). */
+  inset?: boolean | 'wide';
 }) {
   const ok = !!result?.ok;
-  const inner = `flex flex-wrap items-center gap-x-4 gap-y-2 py-3.5 ${inset ? 'mx-auto max-w-[1600px] px-4 lg:pr-[324px] lg:pl-[344px]' : 'px-4'}`;
+  const inner = `flex flex-wrap items-center gap-x-4 gap-y-2 py-3.5 ${inset ? `mx-auto max-w-[1600px] px-4 lg:pl-[344px] ${inset === 'wide' ? 'lg:pr-6' : 'lg:pr-[324px]'}` : 'px-4'}`;
   const [go, setGo] = useState(false);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -227,14 +225,11 @@ export function ActionBar({
                     Show answer
                   </button>
                 )}
-                <button onClick={onDismiss} className="text-red-400 hover:text-red-700" aria-label="Close feedback">
-                  ✕
-                </button>
               </div>
             </div>
           )}
         </div>
-        <span className="ml-auto hidden text-sm text-slate-400 sm:inline">or press Enter</span>
+        {!result && <span className="ml-auto hidden text-sm text-slate-400 sm:inline">or press Enter</span>}
         <button onClick={onCheck} data-testid="check-answer" className="rounded-full bg-brand-500 px-7 py-2.5 text-center text-base font-semibold text-white shadow-sm hover:bg-brand-600" title="Enter, or Ctrl+Enter while typing">
           Check answer
         </button>

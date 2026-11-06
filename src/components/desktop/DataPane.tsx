@@ -35,7 +35,8 @@ type Entry =
 
 export function DataPane({ engine: base, spec, slicerField, given, measures, selectedTable, onSelectTable, onToggle, onOpenMeasure, onNewMeasure, onNewColumn, onDeleteMeasure, onOpenColumn, onDeleteColumn, clickToTick = false }: Props) {
   const [q, setQ] = useState('');
-  const [open, setOpen] = useState<Record<string, boolean>>({ Sales: true });
+  // The first table (the fact table: Sales, or Performances in the festival data) starts expanded.
+  const [open, setOpen] = useState<Record<string, boolean>>({ [base.model.tables[0]?.name ?? 'Sales']: true });
   const [menu, setMenu] = useState<{ x: number; y: number; items: MenuItem[] } | null>(null);
   const match = (s: string) => !q || s.toLowerCase().includes(q.toLowerCase());
   // Expand the selected table (e.g. after adding a column to it).
@@ -53,7 +54,8 @@ export function DataPane({ engine: base, spec, slicerField, given, measures, sel
           ...t.columns
             .filter((c) => !c.hidden)
             .map((c): Entry => ({ kind: 'column', name: c.name, type: c.type, format: c.format, calc: c.calculated ? { table: t.name, name: c.name, expression: c.expression ?? '' } : undefined })),
-          ...(t.name === 'Sales'
+          // Measures are listed under the fact table (the model's first table: Sales, or Performances in the festival data).
+          ...(t === base.model.tables[0]
             ? [...given.map((m) => ({ m, mine: false })), ...measures.map((m) => ({ m, mine: true }))].map(({ m, mine }): Entry => ({ kind: 'measure', name: m.name, measure: m, mine }))
             : []),
         ]

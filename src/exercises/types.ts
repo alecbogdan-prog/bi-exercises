@@ -55,6 +55,8 @@ export interface Exercise {
   id: string;
   /** Set for the steps of an end-to-end project (see src/projects). */
   project?: string;
+  /** Which sample dataset the exercise runs on: the bike shop (default) or the themed festival data. */
+  dataset?: 'festival';
   module: ModuleId;
   title: string;
   level: 'Beginner' | 'Intermediate' | 'Advanced';

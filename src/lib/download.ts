@@ -9,8 +9,9 @@ const cell = (v: Scalar): string => {
 };
 
 /** One CSV file per table of the sample model, keys included so the relationships can be rebuilt. */
-export function modelCsvFiles(): { name: string; content: string }[] {
-  return sampleModel().tables.map((t) => {
+/** One CSV per table of a model (the bike shop by default). */
+export function modelCsvFiles(model = sampleModel()): { name: string; content: string }[] {
+  return model.tables.map((t) => {
     const cols = t.columns.map((c) => c.name);
     const lines = [cols.map(cell).join(','), ...t.rows.map((r) => cols.map((c) => cell(r[c] as Scalar)).join(','))];
     return { name: `${t.name}.csv`, content: lines.join('\n') };

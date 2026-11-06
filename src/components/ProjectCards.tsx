@@ -1,21 +1,32 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ProjectPreview } from './ProjectPreview';
+import type { Project } from '../projects/projects';
 import { completedIds } from '../lib/storage';
 import { PROJECTS } from '../projects/projects';
 import { LockIcon } from './ProLock';
 import { ProgressBar } from './Progress';
 import { hasPro } from '../lib/access';
 
-/** One card per end-to-end project, with the learner's progress. */
+/** One card per end-to-end project, with the learner's progress. A click opens a preview of the finished dashboard. */
 export function ProjectCards() {
   const done = new Set(completedIds());
+  const [open, setOpen] = useState<Project | null>(null);
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {open && <ProjectPreview project={open} onClose={() => setOpen(null)} />}
       {PROJECTS.map((p) => {
         const solved = p.steps.filter((s) => done.has(s.id)).length;
         return (
           <Link
             key={p.id}
             to={`/projects/${p.id}`}
+            onClick={(e) => {
+              // Plain click: preview in place. Cmd/Ctrl/middle click still opens the project page.
+              if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+              e.preventDefault();
+              setOpen(p);
+            }}
             className="group flex min-w-0 flex-col rounded-xl border-l-4 border-l-brand-500 bg-white p-5 shadow-sm ring-1 ring-slate-200 transition hover:shadow-md"
             data-testid={`project-${p.id}`}
           >

@@ -68,8 +68,7 @@ export default function PricingPage() {
     <div className="flex min-h-full flex-col">
       <Header />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-12">
-        <h1 className="text-center text-3xl font-extrabold tracking-tight sm:text-4xl">Simple pricing</h1>
-        <p className="mx-auto mt-3 max-w-xl text-center text-slate-600">Start free. Upgrade when you want the full path from your first chart to job-ready DAX.</p>
+        <h1 className="text-center text-3xl font-extrabold tracking-tight sm:text-4xl">Prices</h1>
         {error && (
           <div role="alert" className="mx-auto mt-6 max-w-xl rounded-xl border border-red-200 bg-red-50 p-3 text-center text-sm text-red-800">
             {error.text}{' '}

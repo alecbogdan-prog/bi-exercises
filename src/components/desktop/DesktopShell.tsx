@@ -88,14 +88,16 @@ function SingleVisualShell({ base, title, work, given, onChange: onWork, focus, 
   const onChange = useCallback((s: VisualSpec, m: Measure[], c: CalcColumn[], extra: Partial<Work> = {}) => onWork({ ...work, spec: s, measures: m, columns: c, ...extra }), [onWork, work]);
   const [view, setView] = useState<View>(focus === 'model' ? 'model' : 'report');
   const [pqOpen, setPqOpen] = useState(focus === 'query');
-  const [homeTable, setHomeTable] = useState(columnTable ?? 'Sales');
+  /** The fact table: where measures live (Sales in the bike data, Performances in the festival data). */
+  const factTable = base.model.tables[0]?.name ?? 'Sales';
+  const [homeTable, setHomeTable] = useState(columnTable ?? factTable);
   const [editor, setEditor] = useState<Editor | null>(() => {
-    if (focus === 'measure' && measures.length === 0) return { mode: 'measure', table: 'Sales', text: '', editing: null };
-    if (focus === 'column' && columns.length === 0) return { mode: 'column', table: columnTable ?? 'Sales', text: '', editing: null };
+    if (focus === 'measure' && measures.length === 0) return { mode: 'measure', table: factTable, text: '', editing: null };
+    if (focus === 'column' && columns.length === 0) return { mode: 'column', table: columnTable ?? factTable, text: '', editing: null };
     return null;
   });
   const [panes, setPanes] = useState({ filters: filtersOpenInitially, viz: true, data: true });
-  const [tableSel, setTableSel] = useState('Sales');
+  const [tableSel, setTableSel] = useState(factTable);
   const [selection, setSelection] = useState<Selection>({ kind: 'visual' });
   const [toast, showToast] = useToast();
   const past = useRef<Snapshot[]>([]);
@@ -166,7 +168,7 @@ function SingleVisualShell({ base, title, work, given, onChange: onWork, focus, 
 
   const newMeasure = (name?: string) => {
     if (view === 'model') setView('report');
-    setEditor({ mode: 'measure', table: 'Sales', text: name ? `${name} = ` : '', editing: null });
+    setEditor({ mode: 'measure', table: factTable, text: name ? `${name} = ` : '', editing: null });
   };
   const newColumn = (table = view === 'table' ? tableSel : homeTable) => {
     if (view === 'model') setView('report');
@@ -271,7 +273,7 @@ function SingleVisualShell({ base, title, work, given, onChange: onWork, focus, 
             } else {
               const r = commitMeasure(modelBase, text, given, measures, editor.editing);
               commit(renameMeasureInSpec(spec, editor.editing, r.name), r.measures);
-              showToast(editor.editing ? `Measure "${r.name}" updated.` : `Measure "${r.name}" created in table Sales.`);
+              showToast(editor.editing ? `Measure "${r.name}" updated.` : `Measure "${r.name}" created in table ${factTable}.`);
             }
             setEditor(null);
           }}
@@ -349,6 +351,7 @@ function SingleVisualShell({ base, title, work, given, onChange: onWork, focus, 
                   sel.kind === 'slicer' && well === 'slicer' ? apply(setSlicerField(spec, sel.index, item)) : apply(addToWell(engine, spec, well, item))
                 }
                 onUnavailable={(l) => showToast(`${l} is not available in the exercises yet.`)}
+                pickToAdd={minimal}
               />
             </Pane>
           </>
@@ -367,7 +370,7 @@ function SingleVisualShell({ base, title, work, given, onChange: onWork, focus, 
                 if (view === 'table') setTableSel(t);
               }}
               onToggle={onDataToggle}
-              onOpenMeasure={(m, mine) => setEditor({ mode: 'measure', table: 'Sales', text: `${m.name} = ${m.expression}`, editing: mine ? m.name : null, readOnly: !mine })}
+              onOpenMeasure={(m, mine) => setEditor({ mode: 'measure', table: factTable, text: `${m.name} = ${m.expression}`, editing: mine ? m.name : null, readOnly: !mine })}
               onNewMeasure={() => newMeasure()}
               onNewColumn={(t) => newColumn(t)}
               onDeleteMeasure={(m) => {

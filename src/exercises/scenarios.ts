@@ -25,7 +25,54 @@ export const PRIYA: Person = { name: 'Priya Shah', role: 'Marketing Manager', in
 export const ELENA: Person = { name: 'Elena Novak', role: 'Operations Lead', initials: 'EN', color: '#ca5010' };
 export const TOM: Person = { name: 'Tom Becker', role: 'Regional Manager, West', initials: 'TB', color: '#038387' };
 
+// The fictional Pinewave Festival (themed exercises on the festival dataset).
+export const RAY: Person = { name: 'Ray Calder', role: 'Festival Director, Pinewave', initials: 'RC', color: '#5c2e91' };
+export const NINA: Person = { name: 'Nina Okafor', role: 'Head of Programming, Pinewave', initials: 'NO', color: '#c50f1f' };
+export const OSKAR: Person = { name: 'Oskar Lind', role: 'Merch Manager, Pinewave', initials: 'OL', color: '#986f0b' };
+
 export const SCENARIOS: Record<string, Scenario> = {
+  'fest-exclude-tent': {
+    from: RAY,
+    time: 'Mon 9:10 AM',
+    message: "The Tent is being rebuilt for next year, so leave it out. How many fans did each of the other stages pull in?",
+    deliver: 'A column chart of attendance by stage, without The Tent.',
+  },
+  'fest-genres-or': {
+    from: NINA,
+    time: 'Mon 11:40 AM',
+    message: "I'm booking the guitar line-up for next summer. Can I see every rock and indie act with their total attendance?",
+    deliver: 'A table of attendance by artist, only Rock and Indie.',
+  },
+  'fest-page-main-stage': {
+    from: RAY,
+    time: 'Mon 2:00 PM',
+    message: 'The sponsor of the Main Stage wants its own report page. First chart: which genres filled the Main Stage?',
+    deliver: 'A bar chart of attendance by genre, with Main Stage as a page filter.',
+  },
+  'fest-bottom-artists': {
+    from: NINA,
+    time: 'Tue 10:05 AM',
+    message: 'Which three acts drew the smallest crowds over the weekend? I want to rethink their slots, not drop them.',
+    deliver: 'A bar chart of the bottom 3 artists by attendance.',
+  },
+  'fest-top-merch-saturday': {
+    from: OSKAR,
+    time: 'Tue 1:30 PM',
+    message: 'Saturday was our big merch day. Which three acts sold the most merch that day? I need to reorder their T-shirts.',
+    deliver: 'A column chart of the top 3 artists by merch sales, Saturday only.',
+  },
+  'fest-slicer-weekend': {
+    from: RAY,
+    time: 'Wed 9:30 AM',
+    message: 'Sunday tickets are a separate deal. For the Friday and Saturday crowd only, how full was each stage? Let me switch days myself.',
+    deliver: 'A column chart of attendance by stage, with a Day slicer on Friday and Saturday.',
+  },
+  'fest-two-slicers': {
+    from: OSKAR,
+    time: 'Wed 4:15 PM',
+    message: 'Pop fans on Sunday buy a lot of merch. Which pop acts sold what on Sunday? Give me slicers so I can check other days too.',
+    deliver: 'A table of merch sales by artist, with a Day slicer on Sunday and a Genre slicer on Pop.',
+  },
   'card-total-sales': {
     from: SAM,
     time: 'Mon 8:42 AM',

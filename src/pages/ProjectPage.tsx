@@ -6,7 +6,8 @@ import { LockIcon } from '../components/ProLock';
 import { ProgressBar } from '../components/Progress';
 import { computeVisual } from '../engine/visual';
 import { canOpen, hasPro } from '../lib/access';
-import { baseEngine } from '../lib/base';
+import { engineFor } from '../lib/base';
+import { SkillsToKnow } from '../components/ProjectPreview';
 import { downloadBytes, modelCsvFiles, projectBrief, zipFiles } from '../lib/download';
 import { completedIds } from '../lib/storage';
 import { dashboardTiles, projectById, projectMeasures } from '../projects/projects';
@@ -28,7 +29,7 @@ function ProjectView({ project: p }: { project: Project }) {
   const locked = !canOpen(p.steps[0]);
   const tiles = useMemo(() => dashboardTiles(p), [p]);
   const results = useMemo(() => {
-    const engine = baseEngine().withMeasures(projectMeasures(p));
+    const engine = engineFor(p).withMeasures(projectMeasures(p));
     return tiles.map((t) => computeVisual(engine, t.spec));
   }, [p, tiles]);
 
@@ -37,7 +38,7 @@ function ProjectView({ project: p }: { project: Project }) {
   }, [p]);
 
   const downloadAll = () => {
-    const files = [{ name: 'Project brief.txt', content: projectBrief(p) }, ...modelCsvFiles()];
+    const files = [{ name: 'Project brief.txt', content: projectBrief(p) }, ...modelCsvFiles(engineFor(p).model)];
     downloadBytes(`${p.id}-power-bi-project.zip`, zipFiles(files), 'application/zip');
   };
   const canDownload = p.free || hasPro();
@@ -70,6 +71,9 @@ function ProjectView({ project: p }: { project: Project }) {
                   </span>
                 ))}
               </div>
+              <div className="mt-5">
+                <SkillsToKnow project={p} />
+              </div>
               <div className="mt-6 max-w-md">
                 <div className="mb-1.5 flex justify-between text-sm">
                   <span className="font-semibold">Your progress</span>
@@ -93,7 +97,7 @@ function ProjectView({ project: p }: { project: Project }) {
                 </span>
                 <div className="leading-tight">
                   <div className="text-sm font-semibold">{p.brief.from.name}</div>
-                  <div className="text-xs text-slate-500">{p.brief.from.role} · Ridgeline Cycles</div>
+                  <div className="text-xs text-slate-500">{p.dataset === 'festival' ? p.brief.from.role : `${p.brief.from.role} · Ridgeline Cycles`}</div>
                 </div>
               </div>
               <p className="rounded-lg rounded-tl-sm bg-slate-50 px-3 py-2.5 leading-relaxed text-slate-800 ring-1 ring-slate-200">{p.brief.message}</p>

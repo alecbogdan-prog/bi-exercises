@@ -6,6 +6,8 @@ export interface HintTarget {
   target: string;
   /** Optional drop target: draws a dashed arrow from `target` to here ("drag this onto that"). */
   to?: string;
+  /** Small heading in the bubble (defaults to "Click here" / "Drag it here"). */
+  label?: string;
 }
 
 interface Box {
@@ -165,7 +167,7 @@ export function HintSpotlight({ hint, text, onClose }: { hint: HintTarget; text:
         role="dialog"
         aria-label="Hint"
       >
-        <div className="mb-0.5 text-[11px] font-semibold tracking-wide text-sunrise-500 uppercase">{hint.to ? 'Drag it here' : 'Click here'}</div>
+        <div className="mb-0.5 text-[11px] font-semibold tracking-wide text-sunrise-500 uppercase">{hint.label ?? (hint.to ? 'Drag it here' : 'Click here')}</div>
         <p className="leading-snug">{text}</p>
         <button onClick={onClose} className="mt-2 rounded-md bg-white/15 px-2.5 py-1 text-xs font-semibold hover:bg-white/25">
           Got it

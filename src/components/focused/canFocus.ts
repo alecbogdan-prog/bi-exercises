@@ -12,11 +12,3 @@ export function canFocus(ex: Exercise): boolean {
 export function needsFilters(ex: Exercise): boolean {
   return ex.module === 'filters' || ex.solution.spec.filters.length > 0;
 }
-
-/** Only a visual type and fields to get right: the hint can point at every click on its own. */
-export function isPlainVisual(ex: Exercise): boolean {
-  if (ex.check.kind !== 'report') return false;
-  const c = ex.check;
-  const s = ex.solution.spec;
-  return !c.requireSort && !c.requireFormat && !c.requireSlicer && !c.requireDrill && !c.requireConditional && !s.filters.length && !(s.slicers ?? []).length;
-}
