@@ -8,7 +8,7 @@ import { BRAND } from '../lib/base';
 import { RibbonChart } from '../components/RibbonChart';
 import { KeyInfluencers } from '../components/KeyInfluencers';
 
-const KEYWORDS = ['Reports & visuals', 'DAX measures', 'Power Query', 'Data modeling', 'Time intelligence', 'Much, much more'];
+const KEYWORDS = ['Reports & visuals', 'DAX measures', 'Power Query', 'Data modeling', 'Time intelligence'];
 
 /** Illustrative learning path for the ribbon chart (scores out of 10, not measured data). */
 const JOURNEY = {
@@ -31,12 +31,6 @@ const INFLUENCERS = [
   { when: 'Created a data model from scratch', factor: 1.3 },
 ];
 
-const CAREER = [
-  { role: 'Finance', task: 'Month-end dashboards, targets vs. actuals, year-over-year growth', chapters: 'Time Intelligence, Data Modeling' },
-  { role: 'Sales', task: 'Revenue by region and product, top customers, rankings', chapters: 'Reports & Visuals, Advanced DAX' },
-  { role: 'Operations', task: 'Cleaning supplier files, stock and order reports', chapters: 'Power Query, Filters & Slicers' },
-  { role: 'Certification', task: 'Prepare for the PL-300 Power BI Data Analyst exam', chapters: 'all 9 chapters' },
-];
 
 /** Real reviews go here once learners send them. The section shows an invitation while this is empty. */
 const TESTIMONIALS: { quote: string; name: string; place: string }[] = [
@@ -71,13 +65,12 @@ function CopyBlock({ title, children }: { title: string; children: ReactNode }) 
   );
 }
 
-function PrimaryButton({ to, children, tone = 'green' }: { to: string; children: ReactNode; tone?: 'green' | 'sun' }) {
-  const c =
-    tone === 'green'
-      ? 'bg-brand-500 text-white shadow-[0_6px_0_var(--color-brand-700)] hover:bg-brand-600 active:translate-y-1 active:shadow-[0_2px_0_var(--color-brand-700)]'
-      : 'bg-ink text-white shadow-[0_6px_0_#000] hover:bg-[#22313d] active:translate-y-1 active:shadow-[0_2px_0_#000]';
+function PrimaryButton({ to, children }: { to: string; children: ReactNode }) {
   return (
-    <Link to={to} className={`inline-block rounded-full px-10 py-5 font-display text-xl font-extrabold tracking-tight transition sm:px-14 sm:text-2xl ${c}`}>
+    <Link
+      to={to}
+      className="inline-block rounded-full bg-brand-500 px-10 py-5 font-display text-xl font-extrabold tracking-tight text-white shadow-[0_6px_0_var(--color-brand-700)] transition hover:bg-brand-600 active:translate-y-1 active:shadow-[0_2px_0_var(--color-brand-700)] sm:px-14 sm:text-2xl"
+    >
       {children}
     </Link>
   );
@@ -120,7 +113,7 @@ export default function HomePage() {
             <div className="mt-10">
               <PrimaryButton to={start}>Start Practicing for Free</PrimaryButton>
             </div>
-            <ul className="mx-auto mt-10 flex max-w-3xl flex-wrap justify-center gap-x-7 gap-y-3 text-[17px] font-semibold text-ink">
+            <ul className="mx-auto mt-10 flex max-w-5xl flex-wrap justify-center gap-x-7 gap-y-3 text-[17px] font-semibold text-ink">
               {KEYWORDS.map((k) => (
                 <li key={k} className="flex items-center gap-2">
                   <Check />
@@ -231,7 +224,7 @@ export default function HomePage() {
         )}
 
         {/* Long-form copy (SEO) */}
-        <section className="bg-mint">
+        <section className="bg-white">
           <div className="mx-auto grid max-w-6xl gap-x-16 gap-y-12 px-4 py-16 md:grid-cols-2">
             <div className="space-y-12">
               <CopyBlock title="The Fun Way to Learn Power BI Skills">
@@ -272,32 +265,29 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Career band */}
-        <section className="bg-sunrise-500 text-ink">
-          <div className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-16 lg:grid-cols-[1fr_1.15fr]">
-            <div className="min-w-0">
-              <h2 className="font-display text-3xl leading-[1.05] font-extrabold tracking-tight text-balance sm:text-5xl">Use {BRAND} to Power Up Your Career</h2>
-              <p className="mt-5 text-[17px] leading-relaxed text-ink/90 sm:text-lg">
-                Reporting is now part of almost every office job, and many analyst, finance and operations roles list Power BI next to Excel. Interviews increasingly include a practical task. The scenarios you practice here are the ones you will be asked to build.
-              </p>
-              <div className="mt-8">
-                <PrimaryButton to={start} tone="sun">
-                  Get Started for Free!
-                </PrimaryButton>
-              </div>
-              <p className="mt-4 text-ink/90">
-                <b>No sign-up needed.</b> Open the first exercise and start building.
-              </p>
+        {/* Career: plain text on the same cream grid as the hero, one button */}
+        <section className="relative overflow-hidden bg-mint text-ink" data-testid="career-section">
+          <div
+            className="pointer-events-none absolute inset-0 opacity-60"
+            style={{ backgroundImage: 'linear-gradient(#f5e6b0 1px, transparent 1px), linear-gradient(90deg, #f5e6b0 1px, transparent 1px)', backgroundSize: '44px 44px' }}
+            aria-hidden
+          />
+          <div className="relative mx-auto max-w-3xl px-4 py-20 text-center">
+            <h2 className="text-3xl font-extrabold tracking-tight text-balance sm:text-4xl">Power BI skills that show up in your next job</h2>
+            <p className="mt-6 text-[17px] leading-relaxed text-slate-600 sm:text-lg">
+              Analyst, finance, sales and operations roles increasingly list Power BI next to Excel. The work is the same everywhere: turn raw files into a clean model, write the
+              measures the business asks for, and build a report people can read at a glance.
+            </p>
+            <p className="mt-4 text-[17px] leading-relaxed text-slate-600 sm:text-lg">
+              Here you practice exactly that, one short exercise at a time, in a report editor that runs in your browser. Every answer is checked on the spot, so you know what you
+              can already do and what to practice next, before an interview or your first day on the job.
+            </p>
+            <div className="mt-10">
+              <PrimaryButton to={start}>Start practicing for free</PrimaryButton>
             </div>
-            <ul className="grid min-w-0 gap-3 sm:grid-cols-2">
-              {CAREER.map((c) => (
-                <li key={c.role} className="rounded-2xl bg-white/85 p-5 shadow-[0_4px_0_rgba(20,33,43,0.12)]">
-                  <div className="text-xs font-bold tracking-widest text-brand-700 uppercase">{c.role}</div>
-                  <div className="mt-1 font-display text-lg leading-snug font-bold text-ink">{c.task}</div>
-                  <div className="mt-2 text-sm text-slate-600">Practice it in: {c.chapters}</div>
-                </li>
-              ))}
-            </ul>
+            <p className="mt-4 text-slate-600">
+              <b className="text-ink">No sign-up needed.</b> Create a free account later if you want to save your progress.
+            </p>
           </div>
         </section>
 
