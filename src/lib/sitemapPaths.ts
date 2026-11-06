@@ -66,9 +66,9 @@ export function pageMeta(): PageMeta[] {
   const pages: PageMeta[] = [
     {
       path: '/',
-      title: 'Power BI Practice Exercises Online: Learn Power BI and DAX',
+      title: 'Power BI Exercises: Fun, Hands-On Power BI and DAX Practice',
       description: desc(
-        `Practice Power BI online with ${EXERCISES.length} hands-on exercises: build reports, write DAX, clean data in Power Query and model relationships, with instant feedback.`,
+        `The fun way to learn Power BI: ${EXERCISES.length} short, hands-on exercises with instant feedback. Build reports, write DAX, clean data and model relationships.`,
         FILLER,
       ),
       h1: 'Power BI practice exercises: learn Power BI by doing',
