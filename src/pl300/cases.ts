@@ -1,0 +1,243 @@
+// Case studies: a company scenario followed by five questions, like the case-study section of the real exam.
+// Original, written for this site. The companies are fictional.
+import { cq } from './model';
+import type { CaseStudy, Question } from './model';
+
+export const CASES: CaseStudy[] = [
+  {
+    id: 'case-ridgeline',
+    title: 'Ridgeline Cycles',
+    scenario: [
+      'Ridgeline Cycles sells bikes and parts through 40 stores in four regions. Order lines are stored in a SQL Server database in the head office network. Monthly budgets are kept in an Excel file on SharePoint Online, with one row per product category and month.',
+      'Each regional manager must see only the sales of their own region. A Managers table in the model lists every manager\'s email address and region. The finance team wants to compare actual sales with budget by month and category, and see growth compared with last year.',
+      'Reports must refresh every morning before 7:00.',
+    ],
+  },
+  {
+    id: 'case-beanline',
+    title: 'Beanline Coffee',
+    scenario: [
+      'Beanline Coffee runs 25 coffee shops. Every night, each shop\'s till exports a CSV file of the day\'s sales into one shared folder. The files all have the same columns, but product codes are typed by hand, so some have extra spaces or lowercase letters.',
+      'Each sale has a timestamp with date and time to the second. Managers want to find the busiest hours of the day for each shop, and the model file has grown large.',
+      'The 25 shop managers should get the finished reports as one read-only package, without access to the workspace.',
+    ],
+  },
+  {
+    id: 'case-silverscreen',
+    title: 'Silverscreen Cinemas',
+    scenario: [
+      'Silverscreen Cinemas sells tickets online and at the box office. Ticket sales are written to an Azure SQL database, with hundreds of millions of rows. The operations team needs ticket counts that are at most a few minutes old, while marketing reports use daily data from the last five years.',
+      'Analysts build reports in a Development workspace. Reports are checked in a Test workspace before they reach the Production workspace used by the whole company.',
+      'Marketing wants to click a film in a summary page and open a page with that film\'s details.',
+    ],
+  },
+  {
+    id: 'case-slicehouse',
+    title: 'Slicehouse Pizza',
+    scenario: [
+      'Slicehouse Pizza has 60 franchise restaurants. Orders come from a delivery API as JSON, with nested records for the customer and the items. Each franchise owner may only see their own restaurants.',
+      'The operations director checks one dashboard every morning and wants an email as soon as the average delivery time goes above 35 minutes. The model has a Restaurant table with an OwnerEmail column.',
+      'Several report authors in other workspaces want to build their own reports on the Slicehouse semantic model without changing it.',
+    ],
+  },
+];
+
+export const CASE_QUESTIONS: Question[] = [
+  // Ridgeline Cycles
+  cq(
+    'case-ridgeline',
+    'c1-1',
+    'manage',
+    'What is required so that the SQL Server order data can be refreshed on a schedule in the Power BI service?',
+    ['An on-premises data gateway', 'A Premium capacity', 'Publish to web', 'Nothing, the service can reach the server directly'],
+    [0],
+    'The SQL Server is inside the company network, so the cloud service needs an on-premises data gateway to reach it. The SharePoint Online budget file needs no gateway.',
+  ),
+  cq(
+    'case-ridgeline',
+    'c1-2',
+    'model',
+    'How should the Budget table be related to the model, given that Sales is per product and day?',
+    [
+      'To a Category dimension (or to Product[Category] as many-to-many) and to the Date table at month level',
+      'Directly to Sales with a one-to-one relationship',
+      'It should be appended to the Sales table',
+      'It cannot be related, so use a separate report',
+    ],
+    [0],
+    'Budget is at category and month grain, so it relates to dimensions at that grain. Category is not unique in Product, so either use a Category table or a many-to-many relationship.',
+  ),
+  cq(
+    'case-ridgeline',
+    'c1-3',
+    'manage',
+    'Which DAX filter on the Managers table, in a single RLS role, shows each regional manager only their region (with Managers related to the region dimension)?',
+    ['[Email] = USERPRINCIPALNAME()', '[Region] = "West"', '[Email] = SELECTEDVALUE ( Managers[Email] )', 'USERELATIONSHIP ( Managers[Email], Sales[Email] )'],
+    [0],
+    'Dynamic RLS compares a column with USERPRINCIPALNAME(). The filter on Managers flows to the region dimension and on to Sales, so one role covers every manager.',
+  ),
+  cq(
+    'case-ridgeline',
+    'c1-4',
+    'model',
+    'Finance wants growth compared with last year. Which measure returns last year\'s sales for the same period?',
+    [
+      'CALCULATE ( [Total Sales], SAMEPERIODLASTYEAR ( \'Date\'[Date] ) )',
+      'CALCULATE ( [Total Sales], ALL ( \'Date\' ) )',
+      'TOTALYTD ( [Total Sales], \'Date\'[Date] )',
+      '[Total Sales] * 0.9',
+    ],
+    [0],
+    'SAMEPERIODLASTYEAR shifts the current dates back one year. Growth is then DIVIDE ( [Total Sales] - [Sales LY], [Sales LY] ).',
+  ),
+  cq(
+    'case-ridgeline',
+    'c1-5',
+    'visualize',
+    'Which visual best shows actual sales and budget by month over the year?',
+    ['A line and clustered column chart with actuals as columns and budget as a line', 'A pie chart', 'A single card', 'A map'],
+    [0],
+    'A combo chart compares two measures over time: columns for actuals and a line for budget make gaps easy to see.',
+  ),
+
+  // Beanline Coffee
+  cq(
+    'case-beanline',
+    'c2-1',
+    'prepare',
+    'How should you load the daily CSV files so that new files are included automatically?',
+    ['Use the Folder connector and Combine files', 'Import each CSV file as a separate query', 'Copy the files into one Excel sheet by hand', 'Use DirectQuery on the folder'],
+    [0],
+    'The Folder connector reads every file in the folder, and Combine files applies the same steps to each one, including files added later.',
+  ),
+  cq(
+    'case-beanline',
+    'c2-2',
+    'prepare',
+    'Product codes do not match the Product table because of extra spaces and lowercase letters. Which TWO transformations fix this before the merge? Choose all that apply.',
+    ['Trim', 'Uppercase', 'Fill Down', 'Transpose'],
+    [0, 1],
+    'Trim removes spaces at the start and end, and Uppercase makes the case the same on both sides, since Power Query comparisons are case-sensitive.',
+  ),
+  cq(
+    'case-beanline',
+    'c2-3',
+    'model',
+    'What is the best way to reduce the model size caused by the timestamp column?',
+    ['Split it into a Date column and a Time (or Hour) column', 'Change it to Text', 'Hide it', 'Create a hierarchy on it'],
+    [0],
+    'A timestamp to the second has very high cardinality. Separate date and hour columns have far fewer distinct values, compress much better, and the hour is what managers need.',
+  ),
+  cq(
+    'case-beanline',
+    'c2-4',
+    'visualize',
+    'Which visual makes the busiest hours per shop stand out at a glance?',
+    ['A matrix with shops on rows, hours on columns and background color conditional formatting', 'A pie chart of sales by hour', 'A gauge', 'A single card with total sales'],
+    [0],
+    'A matrix with color scales works as a heatmap: the darkest cells show the busiest hour for each shop.',
+  ),
+  cq(
+    'case-beanline',
+    'c2-5',
+    'manage',
+    'How should you share the reports with the 25 shop managers?',
+    ['Publish an app from the workspace and give the managers access to the app', 'Add them as workspace Members', 'Use Publish to web', 'Email them the .pbix file'],
+    [0],
+    'An app gives a read-only, packaged view of the workspace content without workspace access. Members could edit and share content.',
+  ),
+
+  // Silverscreen Cinemas
+  cq(
+    'case-silverscreen',
+    'c3-1',
+    'prepare',
+    'Which storage mode fits the operations requirement for ticket counts that are at most a few minutes old?',
+    ['DirectQuery', 'Import with daily refresh', 'Import with refresh every 8 hours', 'A dataflow with weekly refresh'],
+    [0],
+    'DirectQuery queries Azure SQL when the report is used, so counts are current without importing hundreds of millions of rows.',
+  ),
+  cq(
+    'case-silverscreen',
+    'c3-2',
+    'prepare',
+    'The model combines a DirectQuery ticket table with imported marketing tables. Which storage mode should the shared Date table use?',
+    ['Dual', 'DirectQuery', 'Import', 'Live connection'],
+    [0],
+    'In a composite model, a dimension related to both Import and DirectQuery tables should be Dual, so it can serve either kind of query efficiently.',
+  ),
+  cq(
+    'case-silverscreen',
+    'c3-3',
+    'manage',
+    'The imported marketing tables keep five years of daily data, and only recent days change. How do you shorten the nightly refresh?',
+    ['Configure incremental refresh with RangeStart and RangeEnd', 'Remove the Date table', 'Switch every table to Dual', 'Turn on Publish to web'],
+    [0],
+    'Incremental refresh partitions the table by date and refreshes only the recent partitions, keeping the older history as it is.',
+  ),
+  cq(
+    'case-silverscreen',
+    'c3-4',
+    'manage',
+    'How should content move from Development to Test to Production?',
+    ['Use a deployment pipeline with the three workspaces as stages', 'Publish the .pbix file to each workspace by hand', 'Use Publish to web', 'Copy the dashboards with subscriptions'],
+    [0],
+    'Deployment pipelines assign workspaces to stages and deploy content between them, with a comparison of what changed.',
+  ),
+  cq(
+    'case-silverscreen',
+    'c3-5',
+    'visualize',
+    'How do you meet the marketing requirement to open a page with one film\'s details?',
+    ['Create a drillthrough page with Film in the drillthrough well', 'Add a report page tooltip', 'Use Sync slicers', 'Add a bookmark for every film'],
+    [0],
+    'A drillthrough page filtered by Film opens from any visual that shows films, already filtered to the film the user chose.',
+  ),
+
+  // Slicehouse Pizza
+  cq(
+    'case-slicehouse',
+    'c4-1',
+    'prepare',
+    'The API returns orders with a nested Customer record. How do you get customer fields as columns in Power Query?',
+    ['Expand the Customer column with the expand button', 'Change the column type to Text', 'Use Group By', 'Use Fill Down'],
+    [0],
+    'Nested records and tables are expanded from the column header button, where you pick the fields that become columns.',
+  ),
+  cq(
+    'case-slicehouse',
+    'c4-2',
+    'manage',
+    'Which RLS filter, on the Restaurant table, limits each franchise owner to their own restaurants?',
+    ['[OwnerEmail] = USERPRINCIPALNAME()', '[OwnerEmail] = "owner@slicehouse.com"', 'ALL ( Restaurant )', '[OwnerEmail] = BLANK()'],
+    [0],
+    'One dynamic role with [OwnerEmail] = USERPRINCIPALNAME() works for every owner, and the filter flows from Restaurant to the order facts.',
+  ),
+  cq(
+    'case-slicehouse',
+    'c4-3',
+    'visualize',
+    'How can the operations director get an email when average delivery time goes above 35 minutes?',
+    ['Pin a card with the measure to the dashboard and set a data alert on the tile', 'Create a subscription to the report', 'Add conditional formatting', 'Use Publish to web'],
+    [0],
+    'Data alerts are set on dashboard tiles such as cards, KPIs and gauges, and send a notification and email when the value crosses the threshold.',
+  ),
+  cq(
+    'case-slicehouse',
+    'c4-4',
+    'manage',
+    'What should report authors in other workspaces get so they can build reports on the semantic model without changing it?',
+    ['Build permission on the semantic model', 'The Admin role in the Slicehouse workspace', 'The Contributor role in the Slicehouse workspace', 'A copy of the .pbix file'],
+    [0],
+    'Build permission allows creating new content on top of the model, while the model itself stays under the owners\' control.',
+  ),
+  cq(
+    'case-slicehouse',
+    'c4-5',
+    'model',
+    'You need a measure for average delivery time per order, where Orders has a DeliveryMinutes column. Which expression is correct?',
+    ['AVERAGE ( Orders[DeliveryMinutes] )', 'SUM ( Orders[DeliveryMinutes] )', 'COUNTROWS ( Orders )', 'MAX ( Orders[DeliveryMinutes] ) / 2'],
+    [0],
+    'AVERAGE returns the mean of the column in the current filter context, so it works per restaurant, per day and in total.',
+  ),
+];

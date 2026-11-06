@@ -9,6 +9,10 @@ describe('memberStats', () => {
     expect(s).toEqual({ solved: 2, points: 30, streak: 2, pl300Best: 85 });
   });
 
+  it('ignores the per-question answer history when picking the best PL-300 score', () => {
+    expect(memberStats({ pl300: { 'test-1': 0.75, 'q:p1': 3_500_000_000_001 } }, now).pl300Best).toBe(0.75);
+  });
+
   it('keeps a streak alive when today has no practice yet', () => {
     expect(memberStats({ points: { awarded: {}, days: { '2026-11-04': 5, '2026-11-03': 5 } } }, now).streak).toBe(2);
   });

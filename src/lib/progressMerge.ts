@@ -13,7 +13,7 @@ export interface ProgressSnapshot {
   points: PointsLog;
   /** Exercise id → saved editor work. */
   work: Record<string, unknown>;
-  /** PL-300 test id → best score (0–100). */
+  /** PL-300 test id → best score, plus "q:<question id>" → last answer (see pl300/scores.ts). */
   pl300: Record<string, number>;
 }
 
