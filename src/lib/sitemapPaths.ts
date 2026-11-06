@@ -4,6 +4,7 @@ import { DAX_CATEGORIES, DAX_FUNCTIONS } from '../content/daxFunctions';
 import { PROJECTS } from '../projects/projects';
 import { DOMAINS, TESTS } from '../pl300/questions';
 import { PRIVACY, TERMS, UPDATED } from '../content/legal';
+import { ASSESSMENT_FAQ, ASSESSMENT_FORMATS, ASSESSMENT_PATH, ASSESSMENT_SKILLS, PREP_PLAN, SAMPLE_QUESTIONS } from '../content/assessment';
 import { daxTitle, exerciseTitle, projectTitle, testTitle, withBrand } from './titles';
 
 export interface PageLink {
@@ -76,6 +77,7 @@ export function pageMeta(): PageMeta[] {
         'Short, interactive exercises in a report editor that runs in your browser. Build the visual, write the DAX, clean the data, and get your answer checked in seconds. No install and no Power BI license needed.',
         `${EXERCISES.length} hands-on exercises in ${MODULES.length} chapters, end-to-end dashboard projects, a DAX functions guide and PL-300 practice tests.`,
         ...MODULES.map((m) => `${m.title}: ${m.blurb}`),
+        `Who's behind ${BRAND}: Alec, a student working toward a job as a Power BI analyst, who built the site to make learning Power BI easier for himself and now shares it with anyone on the same path.`,
       ],
       linksHeading: 'Start practicing',
       links: [
@@ -83,6 +85,7 @@ export function pageMeta(): PageMeta[] {
         { href: '/projects', text: 'Power BI practice projects' },
         { href: '/dax-functions', text: 'DAX functions list with examples' },
         { href: '/pl300', text: 'PL-300 practice test' },
+        { href: ASSESSMENT_PATH, text: 'Power BI assessment test practice' },
         ...MODULES.flatMap((m) => EXERCISES.filter((e) => e.module === m.id).slice(0, 2).map(exLink)),
       ],
     },
@@ -123,6 +126,32 @@ export function pageMeta(): PageMeta[] {
       ],
       linksHeading: 'Practice tests',
       links: TESTS.map((t) => ({ href: `/pl300/${t.id}`, text: `${t.title}${t.free ? ' (free)' : ''}` })),
+    },
+    {
+      path: ASSESSMENT_PATH,
+      title: title('Power BI Assessment Test: Interview Practice'),
+      description: desc(
+        `Prepare for a Power BI assessment test before your interview: the three test formats, ${SAMPLE_QUESTIONS.length} sample questions with answers, and a 7-day practice plan.`,
+        FILLER,
+      ),
+      h1: 'Power BI assessment test practice',
+      paragraphs: [
+        'Got a Power BI test before your interview? See what these tests look like, try sample questions with explanations, and practice every skill hands-on in your browser.',
+        ...ASSESSMENT_FORMATS.map((f) => `${f.title}: ${f.text}`),
+        `Skills the test checks: ${ASSESSMENT_SKILLS.map((s) => s.skill).join('; ')}.`,
+        ...SAMPLE_QUESTIONS.map((q, i) => `Question ${i + 1}: ${q.q}${q.code ? ` ${q.code}` : ''} Answer: ${q.options[q.answer]}. ${q.why}`),
+        ...PREP_PLAN.map((p) => `${p.day}: ${p.focus}`),
+        ...ASSESSMENT_FAQ.map(([q, a]) => `${q} ${a}`),
+      ],
+      linksHeading: 'Practice for your assessment',
+      links: [
+        ...ASSESSMENT_SKILLS.flatMap((s) => {
+          const ex = EXERCISES.find((e) => e.module === s.module && e.free) ?? EXERCISES.find((e) => e.module === s.module);
+          return ex ? [{ href: `/exercise/${ex.id}`, text: `Practice ${moduleTitle.get(s.module) ?? s.module}: ${ex.title}` }] : [];
+        }),
+        { href: '/pl300', text: 'PL-300 practice tests' },
+        { href: '/projects', text: 'Power BI practice projects' },
+      ],
     },
     {
       path: '/pricing',

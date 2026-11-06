@@ -13,6 +13,7 @@ import Pl300TestPage from './pages/Pl300TestPage';
 import LegalPage from './pages/LegalPage';
 import AccountPage from './pages/AccountPage';
 import TeamPage from './pages/TeamPage';
+import AssessmentPage from './pages/AssessmentPage';
 import { useAccount } from './lib/account';
 // Registers progress sync with the account (copies progress to and from Supabase).
 import './lib/sync';
@@ -39,6 +40,7 @@ export default function App() {
         <Route path="/projects/:id" element={<ProjectPage />} />
         <Route path="/pl300" element={<Pl300Page />} />
         <Route path="/pl300/:testId" element={<Pl300TestPage />} />
+        <Route path="/power-bi-assessment-test" element={<AssessmentPage />} />
         <Route path="/signup" element={<AuthPage mode="signup" />} />
         <Route path="/login" element={<AuthPage mode="login" />} />
         <Route path="/account" element={<AccountPage />} />

@@ -39,6 +39,9 @@ const TESTIMONIALS: { quote: string; name: string; place: string }[] = [
   { quote: 'The Power Query dataset felt just like the messy spreadsheets we deal with in real life. Loved the hands-on practice.', name: 'David', place: 'Early tester' },
 ];
 
+/** The founder card. Swap `initial` for a photo once there is one. */
+const FOUNDER = { name: 'Alec', initial: 'A' };
+
 const FAQ = [
   ['Do I need Power BI Desktop?', 'No. Everything runs in your browser, on Windows, Mac or a Chromebook. The editor follows the same layout as the real tool, so the skills transfer directly when you open Power BI Desktop at work.'],
   ['How is my answer checked?', 'Your visual, measure or query is evaluated against the real data model and compared with the expected result in every context: per category, per year and for the grand total. Different but equivalent DAX formulas are accepted.'],
@@ -288,6 +291,11 @@ export default function HomePage() {
             <p className="mt-4 text-slate-600">
               <b className="text-ink">No sign-up needed.</b> Create a free account later if you want to save your progress.
             </p>
+            <p className="mt-3">
+              <Link to="/power-bi-assessment-test" className="font-semibold text-brand-700 hover:underline">
+                Have a Power BI test before an interview? Practice for it →
+              </Link>
+            </p>
           </div>
         </section>
 
@@ -330,6 +338,35 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+        {/* Who's behind the site */}
+        <section className="border-t border-slate-200 bg-white" id="about" data-testid="about-section">
+          <div className="mx-auto grid max-w-5xl items-center gap-8 px-4 py-16 md:grid-cols-[auto_1fr] md:gap-12">
+            <div
+              className="mx-auto flex h-32 w-32 items-center justify-center rounded-full bg-brand-500 font-display text-5xl font-extrabold text-white shadow-[0_6px_0_var(--color-brand-700)] md:h-40 md:w-40 md:text-6xl"
+              aria-hidden
+            >
+              {FOUNDER.initial}
+            </div>
+            <div className="min-w-0">
+              <p className="mb-2 text-sm font-bold tracking-widest text-brand-600 uppercase">Who's behind {BRAND}</p>
+              <h2 className="font-display text-3xl leading-tight font-extrabold tracking-tight text-balance text-ink sm:text-4xl">Built by a student who wanted a Power BI job</h2>
+              <div className="mt-4 space-y-4 text-[17px] leading-relaxed text-slate-700">
+                <p>
+                  Hi, I'm {FOUNDER.name}. I'm a student working toward a job as a Power BI analyst. I built this site for myself, to make learning Power BI easier: short
+                  exercises I can actually do, with my answer checked right away, instead of one more hour of video.
+                </p>
+                <p>Every exercise here is one I wanted while I was learning. Now it's open to anyone on the same path, and I keep adding new ones.</p>
+              </div>
+              <p className="mt-5 text-slate-600">
+                <b className="text-ink">{FOUNDER.name}</b>, founder ·{' '}
+                <a href="mailto:support@powerbiexercise.com" className="font-semibold text-brand-700 hover:underline">
+                  support@powerbiexercise.com
+                </a>
+              </p>
+            </div>
+          </div>
+        </section>
+
       </main>
       <Footer />
     </div>

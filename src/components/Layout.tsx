@@ -50,6 +50,7 @@ const FOOTER_PRODUCT = [
   { to: '/exercises', label: 'Exercises' },
   { to: '/projects', label: 'Projects' },
   { to: '/pl300', label: 'PL-300 Practice Tests' },
+  { to: '/power-bi-assessment-test', label: 'Assessment Test Prep' },
   { to: '/pricing', label: 'Pricing' },
 ];
 
