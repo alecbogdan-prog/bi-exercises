@@ -11,6 +11,7 @@ import { EXERCISES_7 } from './exercises7';
 import { EXERCISES_8 } from './exercises8';
 import { EXERCISES_9 } from './exercises9';
 import { EXERCISES_10 } from './exercises10';
+import { EXERCISES_11 } from './exercises11';
 import { PROJECT_STEPS } from '../projects/projects';
 import type { Exercise } from './types';
 import { MODULES } from './types';
@@ -394,7 +395,7 @@ const BASE_EXERCISES: Exercise[] = [
 ];
 
 /** All exercises, ordered module by module (this order drives Prev/Next). */
-export const EXERCISES: Exercise[] = MODULES.flatMap((mod) => [...BASE_EXERCISES, ...EXERCISES_2, ...EXERCISES_3, ...EXERCISES_4, ...EXERCISES_5, ...EXERCISES_6, ...EXERCISES_7, ...EXERCISES_8, ...EXERCISES_9, ...EXERCISES_10].filter((e) => e.module === mod.id));
+export const EXERCISES: Exercise[] = MODULES.flatMap((mod) => [...BASE_EXERCISES, ...EXERCISES_2, ...EXERCISES_3, ...EXERCISES_4, ...EXERCISES_5, ...EXERCISES_6, ...EXERCISES_7, ...EXERCISES_8, ...EXERCISES_9, ...EXERCISES_10, ...EXERCISES_11].filter((e) => e.module === mod.id));
 
 for (const e of EXERCISES) e.scenario = SCENARIOS[e.id];
 

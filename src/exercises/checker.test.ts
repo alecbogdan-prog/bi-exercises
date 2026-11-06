@@ -1,18 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { Engine } from '../engine/engine';
 import { buildModel } from '../engine/dataset';
-import { buildFestivalModel } from '../engine/festival';
+import { engineFor } from '../lib/base';
 import { checkExercise } from './checker';
 import { EXERCISES, exerciseById } from './exercises';
 
 const baseEngine = new Engine(buildModel());
 const base = baseEngine;
-const festival = new Engine(buildFestivalModel());
 
 describe('every exercise', () => {
   for (const ex of EXERCISES) {
     it(`${ex.id}: solution passes, starter fails`, () => {
-      const base = ex.dataset === 'festival' ? festival : baseEngine;
+      const base = ex.dataset ? engineFor(ex) : baseEngine;
       const sol = checkExercise(base, ex, ex.solution.spec, ex.solution.measures ?? [], ex.solution.columns ?? [], { steps: ex.solution.steps, relationships: ex.solution.relationships, report: ex.solution.report });
       expect(sol.messages).toEqual([]);
       expect(sol.ok).toBe(true);
@@ -132,5 +131,24 @@ describe('third batch: feedback', () => {
     expect(checkExercise(base, d, { ...d.solution.spec, drill: undefined }, []).ok).toBe(false);
     const c = ex('cf-databars');
     expect(checkExercise(base, c, { ...c.solution.spec, format: {} }, []).messages[0]).toMatch(/Data bars/);
+  });
+});
+
+describe('themed chapters: common mistakes are rejected', () => {
+  const run = (id: string, name: string, table: string, expression: string) => {
+    const ex = exerciseById(id)!;
+    return checkExercise(engineFor(ex), ex, ex.solution.spec, [{ name, table, expression }]);
+  };
+  it('CALCULATE without KEEPFILTERS fills the Away row', () => {
+    expect(run('calc-keepfilters-home', 'Home Points', 'Results', 'CALCULATE([Total Points], KEEPFILTERS(Results[Venue] = "Home"))').ok).toBe(true);
+    expect(run('calc-keepfilters-home', 'Home Points', 'Results', 'CALCULATE([Total Points], Results[Venue] = "Home")').ok).toBe(false);
+  });
+  it('RANKX without ALL ranks every drink first', () => {
+    expect(run('cof-rank-drinks', 'Drink Rank', 'Orders', 'RANKX(VALUES(Drink[Drink]), [Total Revenue])').ok).toBe(false);
+  });
+  it('keeping the wrong-column relationship fails', () => {
+    const ex = exerciseById('pizza-wrong-columns')!;
+    const wrong = [...ex.solution.relationships!, { fromTable: 'Orders', fromColumn: 'StoreID', toTable: 'Driver', toColumn: 'DriverID' }];
+    expect(checkExercise(engineFor(ex), ex, ex.solution.spec, [], [], { relationships: wrong }).ok).toBe(false);
   });
 });

@@ -1,5 +1,6 @@
 // End-to-end projects: each one is a chain of steps that ends in a finished dashboard. Original content.
 import { sampleModel } from '../engine/dataset';
+import type { DatasetId } from '../engine/datasets';
 import type { Measure, Relationship } from '../engine/model';
 import type { Step } from '../engine/query';
 import type { FieldRef, ValueField, VisualSpec, VisualType } from '../engine/visual';
@@ -24,7 +25,7 @@ export interface Project {
   /** What the learner practices, shown as chips. */
   skills: string[];
   /** The sample dataset the project runs on (the bike shop when unset). */
-  dataset?: 'festival';
+  dataset?: DatasetId;
   steps: Exercise[];
 }
 
