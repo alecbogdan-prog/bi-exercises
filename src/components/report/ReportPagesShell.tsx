@@ -42,6 +42,8 @@ interface Props {
   report: ReportState;
   given: Measure[];
   onChange: (r: ReportState) => void;
+  /** Simple view: no title bar, ribbon or Data pane; a small toolbar with the page actions; lists instead of dragging. */
+  minimal?: boolean;
 }
 
 interface DrillState {
@@ -53,7 +55,7 @@ interface DrillState {
 const noop = () => {};
 
 /** The report editor for multi-page exercises: pages, interactions, drillthrough, bookmarks, buttons and synced slicers. */
-export function ReportPagesShell({ base, title, report, given, onChange }: Props) {
+export function ReportPagesShell({ base, title, report, given, onChange, minimal = false }: Props) {
   const engine = useMemo(() => base.withMeasures(given), [base, given]);
   const [pageId, setPageId] = useState(report.pages[0].id);
   const page = pageById(report, pageId) ?? report.pages[0];
@@ -128,20 +130,55 @@ export function ReportPagesShell({ base, title, report, given, onChange }: Props
   const visible = page.visuals.filter((v) => !report.hidden.includes(v.id));
 
   return (
-    <div className="relative flex h-full min-w-[1100px] flex-col bg-d-canvas font-[Segoe_UI,system-ui,sans-serif] text-d-text" data-testid="pages-shell">
-      <TitleBar title={title} canUndo={false} canRedo={false} onUndo={noop} onRedo={noop} onSave={() => showToast('Your work is saved automatically.')} />
-      <Ribbon
-        onAction={onRibbon}
-        panes={{ filters: false, viz: panes.viz, data: panes.data }}
-        onFile={() => showToast('The File menu is not available in the exercises.')}
-        pagesMode={{ editInteractions, bookmarks: panes.bookmarks, selection: panes.selection, sync: panes.sync }}
-      />
-      <div className="flex min-h-0 flex-1">
-        <div className="flex w-12 shrink-0 flex-col items-center gap-1 border-r border-d-border bg-white pt-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded border-l-2 border-d-accent text-d-text" title="Report view">
-            <Ico.report className="h-4 w-4" />
-          </span>
+    <div
+      className={`relative flex flex-col bg-d-canvas font-[Segoe_UI,system-ui,sans-serif] text-d-text ${minimal ? 'h-full min-w-[760px] overflow-hidden rounded-md border border-d-border' : 'h-full min-w-[1100px]'}`}
+      data-testid="pages-shell"
+    >
+      {minimal ? (
+        <div className="flex h-10 shrink-0 flex-wrap items-center gap-1 border-b border-d-border bg-d-ribbon px-2 text-[12px]" data-testid="mini-toolbar">
+          {(
+            [
+              ['edit-interactions', 'Edit interactions', editInteractions],
+              ['toggle-bookmarks', 'Bookmarks', panes.bookmarks],
+              ['toggle-selection', 'Selection', panes.selection],
+              ['toggle-sync', 'Sync slicers', panes.sync],
+              ['insert-button', 'Button', false],
+              ['insert-back-button', 'Back button', false],
+            ] as [RibbonAction, string, boolean][]
+          ).map(([a, label, on]) => (
+            <button
+              key={a}
+              onClick={(e) => {
+                e.stopPropagation();
+                onRibbon(a, label);
+              }}
+              aria-pressed={on}
+              data-testid={`mini-${a}`}
+              className={`flex h-8 items-center rounded-[4px] px-2.5 ${on ? 'bg-white font-semibold text-d-text shadow-sm' : 'text-d-text hover:bg-d-hover'}`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
+      ) : (
+        <>
+          <TitleBar title={title} canUndo={false} canRedo={false} onUndo={noop} onRedo={noop} onSave={() => showToast('Your work is saved automatically.')} />
+          <Ribbon
+            onAction={onRibbon}
+            panes={{ filters: false, viz: panes.viz, data: panes.data }}
+            onFile={() => showToast('The File menu is not available in the exercises.')}
+            pagesMode={{ editInteractions, bookmarks: panes.bookmarks, selection: panes.selection, sync: panes.sync }}
+          />
+        </>
+      )}
+      <div className="flex min-h-0 flex-1">
+        {!minimal && (
+          <div className="flex w-12 shrink-0 flex-col items-center gap-1 border-r border-d-border bg-white pt-2">
+            <span className="flex h-9 w-9 items-center justify-center rounded border-l-2 border-d-accent text-d-text" title="Report view">
+              <Ico.report className="h-4 w-4" />
+            </span>
+          </div>
+        )}
 
         {/* Canvas */}
         <div
@@ -265,7 +302,7 @@ export function ReportPagesShell({ base, title, report, given, onChange }: Props
               });
             }}
           />
-          <StatusBar left={`Page ${report.pages.findIndex((p) => p.id === page.id) + 1} of ${report.pages.length}`} />
+          {!minimal && <StatusBar left={`Page ${report.pages.findIndex((p) => p.id === page.id) + 1} of ${report.pages.length}`} />}
         </div>
 
         {panes.bookmarks && (
@@ -367,6 +404,8 @@ export function ReportPagesShell({ base, title, report, given, onChange }: Props
 
         <Pane title="Visualizations" open={panes.viz} onToggle={() => setPanes({ ...panes, viz: !panes.viz })} width={236} testId="pane-viz">
           <VizPane
+            engine={engine}
+            pickToAdd={minimal}
             report={report}
             page={page}
             visual={selVisual}
@@ -383,6 +422,7 @@ export function ReportPagesShell({ base, title, report, given, onChange }: Props
             }}
           />
         </Pane>
+        {!minimal && (
         <Pane title="Data" open={panes.data} onToggle={() => setPanes({ ...panes, data: !panes.data })} width={220} testId="pane-data">
           <DataPane
             engine={engine}
@@ -398,6 +438,7 @@ export function ReportPagesShell({ base, title, report, given, onChange }: Props
             onDeleteColumn={noop}
           />
         </Pane>
+        )}
       </div>
       {menu && <Menu x={menu.x} y={menu.y} items={menu.items} onClose={() => setMenu(null)} />}
       {toast && (
@@ -420,6 +461,7 @@ function VisualFrame({ v, selected, onSelect, interactionBar, children }: { v: R
       }}
       onContextMenu={(e) => e.preventDefault()}
       data-testid={`visual-${v.id}`}
+      data-selected={selected || undefined}
       aria-label={v.title}
     >
       {interactionBar}
@@ -559,6 +601,8 @@ function PageTabs({
               e.preventDefault();
               onMenu(p.id, e.clientX, e.clientY);
             }}
+            data-page-tab={p.name}
+            data-current={p.id === current || undefined}
             className={`relative flex items-center gap-1 rounded-t-[4px] border border-b-0 px-4 py-1 text-[12px] ${p.id === current ? 'border-d-border bg-white font-semibold' : 'border-transparent text-d-sub hover:bg-d-hover'}`}
             title={p.hidden ? `${p.name} (hidden page)` : p.name}
           >
@@ -609,7 +653,7 @@ function BookmarksPane({
   const [menu, setMenu] = useState<{ x: number; y: number; id: string } | null>(null);
   return (
     <div className="px-2 text-[12px]">
-      <button onClick={onAdd} className="mb-2 flex items-center gap-1 rounded px-2 py-1 hover:bg-d-hover">
+      <button onClick={onAdd} data-testid="bookmark-add" className="mb-2 flex items-center gap-1 rounded px-2 py-1 hover:bg-d-hover">
         <Ico.plus className="h-3 w-3" /> Add
       </button>
       {report.bookmarks.length === 0 && <p className="px-2 text-d-sub">No bookmarks yet. Set up the page, then click Add.</p>}
@@ -629,7 +673,7 @@ function BookmarksPane({
                 onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
               />
             ) : (
-              <button className="min-w-0 flex-1 truncate text-left" onClick={() => onApply(b.id)} onDoubleClick={() => setRenaming(b.id)} title="Click to show, double-click to rename">
+              <button data-bookmark={b.name} className="min-w-0 flex-1 truncate text-left" onClick={() => onApply(b.id)} onDoubleClick={() => setRenaming(b.id)} title="Click to show, double-click to rename">
                 {b.name}
               </button>
             )}
@@ -656,6 +700,8 @@ function BookmarksPane({
 }
 
 function VizPane({
+  engine,
+  pickToAdd,
   report,
   page,
   visual,
@@ -663,6 +709,8 @@ function VizPane({
   onVisual,
   onDrillField,
 }: {
+  engine: Engine;
+  pickToAdd: boolean;
   report: ReportState;
   page: ReportPage;
   visual: ReportVisual | null;
@@ -679,7 +727,7 @@ function VizPane({
     <div className="px-3 pb-4 text-[12px]">
       <div className="mb-3 flex gap-1 border-b border-d-border">
         {(['build', 'format'] as const).map((t) => (
-          <button key={t} onClick={() => setTab(t)} className={`px-2 pb-1.5 ${tab === t ? 'border-b-2 border-d-accent font-semibold' : 'text-d-sub'}`}>
+          <button key={t} data-viz-tab={t} onClick={() => setTab(t)} className={`px-2 pb-1.5 ${tab === t ? 'border-b-2 border-d-accent font-semibold' : 'text-d-sub'}`}>
             {t === 'build' ? 'Build' : 'Format'} {visual ? 'visual' : 'page'}
           </button>
         ))}
@@ -713,7 +761,32 @@ function VizPane({
                 </button>
               </div>
             ))}
-            <div className="flex h-[26px] items-center rounded-[2px] border border-dashed border-d-strong px-2 text-d-faint">Add drill-through fields here</div>
+            {pickToAdd ? (
+              <select
+                value=""
+                aria-label="Add a drill-through field"
+                onChange={(e) => {
+                  const [table, column] = e.target.value.split('\u0000');
+                  if (table && column) onDrillField({ table, column });
+                }}
+                className="h-[26px] w-full rounded-[2px] border border-dashed border-d-strong bg-white px-1.5 text-[12px] text-d-faint"
+              >
+                <option value="">+ Add a field…</option>
+                {engine.model.tables.map((t) => (
+                  <optgroup key={t.name} label={t.name}>
+                    {t.columns
+                      .filter((c) => !c.hidden)
+                      .map((c) => (
+                        <option key={c.name} value={`${t.name}\u0000${c.name}`}>
+                          {c.name}
+                        </option>
+                      ))}
+                  </optgroup>
+                ))}
+              </select>
+            ) : (
+              <div className="flex h-[26px] items-center rounded-[2px] border border-dashed border-d-strong px-2 text-d-faint">Add drill-through fields here</div>
+            )}
           </div>
           <div className="mt-3 flex items-center justify-between">
             <span>Keep all filters</span>

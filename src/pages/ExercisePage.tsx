@@ -372,7 +372,7 @@ function ExerciseView({ ex }: { ex: Exercise }) {
                   <DesktopShell key={resetKey} {...shellProps} filtersOpenInitially={needsFilters(ex)} showFilters={needsFilters(ex)} minimal />
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px]">
-                  {(hints === 0 || textHints < ex.hints.length || ex.check.kind === 'report' || ex.check.kind === 'dax' || ex.check.kind === 'column') && (
+                  {(hints === 0 || textHints < ex.hints.length || ex.check.kind !== 'pages' || !!work.report) && (
                     <button onClick={showHint} className="font-medium text-brand-700 hover:underline" data-testid="show-hint">
                       {hints === 0 ? 'Show a hint' : 'Show me the next step'}
                     </button>

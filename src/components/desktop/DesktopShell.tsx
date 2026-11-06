@@ -76,7 +76,7 @@ type Editor = { mode: 'measure' | 'column'; table: string; text: string; editing
 export function DesktopShell(props: DesktopProps) {
   if (props.focus === 'pages' && props.work.report) {
     const { work, onChange } = props;
-    return <ReportPagesShell base={props.base} title={props.title} report={work.report!} given={props.given} onChange={(report) => onChange({ ...work, report })} />;
+    return <ReportPagesShell base={props.base} title={props.title} report={work.report!} given={props.given} onChange={(report) => onChange({ ...work, report })} minimal={props.minimal} />;
   }
   return <SingleVisualShell {...props} />;
 }

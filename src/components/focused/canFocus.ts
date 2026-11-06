@@ -1,11 +1,8 @@
 import type { Exercise } from '../../exercises/types';
 
-/**
- * Exercises that open in the simple view (only the parts of Power BI they need).
- * Multi-page report exercises keep the full editor: they need the page tabs and the whole report.
- */
+/** Exercises that open in the simple view (only the parts of Power BI they need). Every exercise does now. */
 export function canFocus(ex: Exercise): boolean {
-  return ex.check.kind !== 'pages';
+  return !!ex.check;
 }
 
 /** The exercise needs the Filters pane (filters on the answer, or the filters module). */
