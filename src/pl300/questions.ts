@@ -1,28 +1,19 @@
 // Original practice questions in the style of the PL-300 (Microsoft Power BI Data Analyst) exam.
 // They are written for this site; they are not real exam questions.
 
-export type Domain = 'prepare' | 'model' | 'visualize' | 'manage';
+import { q } from './model';
+import type { Domain, Question } from './model';
+import { PREPARE_MORE } from './questionsPrepare';
+import { MODEL_MORE } from './questionsModel';
+import { VISUALIZE_MORE } from './questionsVisualize';
+import { MANAGE_MORE } from './questionsManage';
+import { CASES, CASE_QUESTIONS } from './cases';
 
-export const DOMAINS: { id: Domain; title: string; weight: string }[] = [
-  { id: 'prepare', title: 'Prepare the data', weight: '25–30%' },
-  { id: 'model', title: 'Model the data', weight: '25–30%' },
-  { id: 'visualize', title: 'Visualize and analyze the data', weight: '25–30%' },
-  { id: 'manage', title: 'Manage and secure Power BI', weight: '15–20%' },
-];
+export { DOMAINS } from './model';
+export { CASES } from './cases';
+export type { CaseStudy, Domain, Question } from './model';
 
-export interface Question {
-  id: string;
-  domain: Domain;
-  prompt: string;
-  options: string[];
-  /** Indexes of the correct options. More than one means "choose all that apply". */
-  correct: number[];
-  explanation: string;
-}
-
-const q = (id: string, domain: Domain, prompt: string, options: string[], correct: number[], explanation: string): Question => ({ id, domain, prompt, options, correct, explanation });
-
-export const QUESTIONS: Question[] = [
+const BASE: Question[] = [
   // ---------------- Prepare the data ----------------
   q(
     'p1',
@@ -357,23 +348,42 @@ export const QUESTIONS: Question[] = [
   ),
 ];
 
+export const QUESTIONS: Question[] = [...BASE, ...PREPARE_MORE, ...MODEL_MORE, ...VISUALIZE_MORE, ...MANAGE_MORE, ...CASE_QUESTIONS];
+
 export interface PracticeTest {
   id: string;
   title: string;
   free: boolean;
   questionIds: string[];
+  /** The case study at the end of the test. */
+  caseId: string;
 }
 
-/** Each test takes half of every domain, so both tests cover the whole exam outline. */
-const half = (domain: Domain, part: 0 | 1) =>
-  QUESTIONS.filter((x) => x.domain === domain)
-    .filter((_, i) => i % 2 === part)
+const DOMAIN_ORDER: Domain[] = ['prepare', 'model', 'visualize', 'manage'];
+export const TEST_COUNT = 4;
+
+/** Every fourth standalone question of each domain, so the four tests cover the whole outline without repeats. */
+const share = (domain: Domain, part: number) =>
+  QUESTIONS.filter((x) => x.domain === domain && !x.caseId)
+    .filter((_, i) => i % TEST_COUNT === part)
     .map((x) => x.id);
 
-export const TESTS: PracticeTest[] = [
-  { id: 'test-1', title: 'Practice test 1', free: true, questionIds: (['prepare', 'model', 'visualize', 'manage'] as Domain[]).flatMap((d) => half(d, 0)) },
-  { id: 'test-2', title: 'Practice test 2', free: false, questionIds: (['prepare', 'model', 'visualize', 'manage'] as Domain[]).flatMap((d) => half(d, 1)) },
-];
+/** 35 standalone questions (weighted like the exam) followed by a five-question case study: 40 in all. */
+export const TESTS: PracticeTest[] = CASES.slice(0, TEST_COUNT).map((c, part) => ({
+  id: `test-${part + 1}`,
+  title: `Practice test ${part + 1}`,
+  free: part === 0,
+  caseId: c.id,
+  questionIds: [...DOMAIN_ORDER.flatMap((d) => share(d, part)), ...CASE_QUESTIONS.filter((x) => x.caseId === c.id).map((x) => x.id)],
+}));
+
+/** Exam mode: time allowed, like the real exam. */
+export const EXAM_MINUTES = 100;
+
+export const caseById = (id: string) => CASES.find((c) => c.id === id);
+
+/** An estimate on the exam's 100–1,000 scale, where 70% correct is 700 (the pass score). Microsoft's real scaling is not public. */
+export const scaledScore = (fraction: number) => Math.max(100, Math.round(fraction * 1000));
 
 /** PL-300 is scored from 100 to 1,000 and you need 700 to pass. We use 70% as the practice pass mark. */
 export const PASS_MARK = 0.7;

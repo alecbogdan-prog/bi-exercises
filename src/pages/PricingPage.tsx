@@ -1,3 +1,4 @@
+import { QUESTIONS, TESTS } from '../pl300/questions';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { currentPlan, useAccount } from '../lib/account';
@@ -10,8 +11,8 @@ import { EXERCISES } from '../exercises/exercises';
 
 export const PLANS = [
   { name: 'Free', price: '$0', period: '', features: ['The first 2 exercises in every chapter', 'The Sales Overview Dashboard project', 'PL-300 practice test 1', 'Instant answer checking', 'Full DAX functions guide', 'Progress saved on this device'], cta: 'Start now', highlight: false },
-  { name: 'Pro', price: '$79', period: '/year', sub: 'or $12.99/month', features: [`All ${EXERCISES.length} exercises`, 'All end-to-end dashboard projects, with data downloads', 'Every PL-300 practice test', 'Power Query & data modeling modules', 'Certificate for LinkedIn', 'Progress synced across devices'], cta: 'Get Pro yearly', offer: 'pro-year' as OfferId, alt: { label: 'or pay $12.99 monthly', offer: 'pro-month' as OfferId }, highlight: true },
-  { name: 'PL-300 Prep', price: '$49', period: ' one-time', sub: '3 months of access', features: ['Exam-style practice tests', 'Explanations for every answer', 'Weak-topic review'], cta: 'Buy PL-300 Prep', offer: 'pl300' as OfferId, highlight: false },
+  { name: 'Pro', price: '$79', period: '/year', sub: 'or $12.99/month', features: [`All ${EXERCISES.length} exercises`, 'All end-to-end dashboard projects, with data downloads', 'Every PL-300 practice test, with exam mode and weak-topic review', 'Power Query & data modeling modules', 'Certificate for LinkedIn', 'Progress synced across devices'], cta: 'Get Pro yearly', offer: 'pro-year' as OfferId, alt: { label: 'or pay $12.99 monthly', offer: 'pro-month' as OfferId }, highlight: true },
+  { name: 'PL-300 Prep', price: '$49', period: ' one-time', sub: '3 months of access', features: [`${TESTS.length} full practice tests, ${QUESTIONS.length} exam-style questions`, 'Timed exam mode with a score out of 1,000', 'Case studies like the real exam', 'Explanations for every answer', 'Weak-topic review'], cta: 'Buy PL-300 Prep', offer: 'pl300' as OfferId, highlight: false },
   {
     name: 'Enterprise',
     price: 'Custom',

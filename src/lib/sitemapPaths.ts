@@ -2,7 +2,7 @@ import { EXERCISES } from '../exercises/exercises';
 import { MODULES } from '../exercises/types';
 import { DAX_CATEGORIES, DAX_FUNCTIONS } from '../content/daxFunctions';
 import { PROJECTS } from '../projects/projects';
-import { DOMAINS, TESTS } from '../pl300/questions';
+import { CASES, DOMAINS, EXAM_MINUTES, QUESTIONS, TESTS, caseById } from '../pl300/questions';
 import { PRIVACY, TERMS, UPDATED } from '../content/legal';
 import { ASSESSMENT_FAQ, ASSESSMENT_FORMATS, ASSESSMENT_PATH, ASSESSMENT_SKILLS, PREP_PLAN, SAMPLE_QUESTIONS } from '../content/assessment';
 import { daxTitle, exerciseTitle, projectTitle, testTitle, withBrand } from './titles';
@@ -119,10 +119,11 @@ export function pageMeta(): PageMeta[] {
     {
       path: '/pl300',
       title: title('PL-300 Practice Test: Power BI Exam Prep'),
-      description: desc('Free PL-300 practice test with exam-style questions across all four domains, explanations for every answer and a score that shows if you are ready.', FILLER),
+      description: desc(`${TESTS.length} PL-300 practice tests with ${QUESTIONS.length} exam-style questions, case studies, a timed exam mode and explanations for every answer. The first test is free.`, FILLER),
       h1: 'PL-300 practice tests for the Power BI Data Analyst exam',
       paragraphs: [
-        'Exam-style questions across the four PL-300 domains: prepare the data, model the data, visualize and analyze the data, and manage and secure Power BI. Every answer comes with an explanation. The first test is free.',
+        `${TESTS.length} full practice tests with ${QUESTIONS.length} exam-style questions across the four PL-300 domains: prepare the data, model the data, visualize and analyze the data, and manage and secure Power BI. Each test has 40 questions and ends with a case study, like the real exam (${CASES.map((c) => c.title).join(', ')}). The first test is free.`,
+        `Practice mode explains every answer. Exam mode gives you ${EXAM_MINUTES} minutes, lets you flag questions and shows an estimated score out of 1,000 at the end. The weak-topic review collects every question you missed, weakest area first.`,
       ],
       linksHeading: 'Practice tests',
       links: TESTS.map((t) => ({ href: `/pl300/${t.id}`, text: `${t.title}${t.free ? ' (free)' : ''}` })),
@@ -158,7 +159,7 @@ export function pageMeta(): PageMeta[] {
       title: title('Pricing: Power BI Practice Plans'),
       description: desc('Start practicing Power BI for free. Upgrade to Pro for every exercise, project and PL-300 practice test, or buy a 3-month PL-300 Prep pass.', FILLER),
       h1: 'Pricing',
-      paragraphs: ['Free: the first exercises of every chapter, one project and PL-300 practice test 1. Pro: every exercise, project and practice test, yearly or monthly. PL-300 Prep: 3 months of practice tests. Enterprise: Pro for your whole team, a manager dashboard with everyone’s progress and one company invoice; contact us for a quote.'],
+      paragraphs: ['Free: the first exercises of every chapter, one project and PL-300 practice test 1. Pro: every exercise, project and practice test, yearly or monthly. PL-300 Prep: 3 months of every practice test, timed exam mode and the weak-topic review. Enterprise: Pro for your whole team, a manager dashboard with everyone’s progress and one company invoice; contact us for a quote.'],
       links: [
         { href: '/exercises', text: 'Start with the free exercises' },
         { href: '/pl300', text: 'Try the free PL-300 practice test' },
@@ -244,10 +245,11 @@ export function pageMeta(): PageMeta[] {
     pages.push({
       path: `/pl300/${t.id}`,
       title: testTitle(t.title),
-      description: desc(`An exam-style PL-300 practice test with ${t.questionIds.length} questions across all four domains and an explanation for every answer.`, FILLER),
+      description: desc(`A full PL-300 practice test: ${t.questionIds.length} exam-style questions across all four domains, a case study, a timed exam mode and an explanation for every answer.`, FILLER),
       h1: `${t.title}: PL-300 practice test`,
       paragraphs: [
-        `${t.questionIds.length} exam-style questions for the PL-300 Power BI Data Analyst exam, with an explanation for every answer.${t.free ? ' This test is free.' : ''}`,
+        `${t.questionIds.length} exam-style questions for the PL-300 Power BI Data Analyst exam, ending with the ${caseById(t.caseId)?.title} case study, with an explanation for every answer.${t.free ? ' This test is free.' : ''}`,
+        `Take it in practice mode, with feedback after each question, or in exam mode: ${EXAM_MINUTES} minutes and a score out of 1,000 at the end.`,
         `The questions follow the exam's four skill areas: ${DOMAINS.map((d) => `${d.title} (${d.weight} of the exam)`).join(', ')}.`,
         'The real exam is scored from 100 to 1,000 and you need 700 to pass. Here the pass mark is 70%, and your best score is saved so you can see your progress.',
       ],

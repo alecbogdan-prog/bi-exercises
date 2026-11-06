@@ -25,7 +25,9 @@ export function memberStats(data: Partial<ProgressSnapshot> | null | undefined, 
     streak++;
     d.setDate(d.getDate() - 1);
   }
-  const scores = Object.values(data?.pl300 ?? {}).map(Number).filter((n) => Number.isFinite(n));
+  const scores = Object.entries(data?.pl300 ?? {})
+    .filter(([k]) => !k.startsWith('q:'))
+    .map(([, v]) => Number(v)).filter((n) => Number.isFinite(n));
   return { solved, points, streak, pl300Best: scores.length ? Math.max(...scores) : null };
 }
 

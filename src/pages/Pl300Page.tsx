@@ -5,7 +5,7 @@ import { LockIcon } from '../components/ProLock';
 import { hasPl300 } from '../lib/access';
 import { BRAND } from '../lib/base';
 import { bestScore } from '../pl300/scores';
-import { DOMAINS, PASS_MARK, QUESTIONS, TESTS } from '../pl300/questions';
+import { CASES, DOMAINS, EXAM_MINUTES, PASS_MARK, QUESTIONS, TESTS, caseById } from '../pl300/questions';
 import { withBrand } from '../lib/titles';
 
 export default function Pl300Page() {
@@ -27,13 +27,27 @@ export default function Pl300Page() {
             <div className="text-xs font-semibold tracking-widest text-brand-700 uppercase">Exam prep</div>
             <h1 className="mt-3 font-display text-4xl leading-[1.05] font-extrabold tracking-tight text-balance text-ink sm:text-6xl">PL-300 Practice Tests</h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg text-balance text-slate-600">
-              Exam-style questions for the Microsoft Power BI Data Analyst certification, with an explanation for every answer and a score for each skill area. Combine them with the
-              hands-on exercises to learn the skills, not just the answers.
+              {TESTS.length} full practice tests with {QUESTIONS.length} exam-style questions and {CASES.length} case studies for the Microsoft Power BI Data Analyst certification.
+              Practice with an explanation after every answer, or take a timed exam with a score out of 1,000.
             </p>
           </div>
         </section>
 
         <section className="mx-auto max-w-5xl px-4 py-12">
+          <div className="mb-6 grid gap-3 text-sm text-slate-700 sm:grid-cols-3">
+            <div className="rounded-xl bg-slate-50 p-4">
+              <b className="text-ink">Practice mode</b>: check each answer and read why it is right.
+            </div>
+            <div className="rounded-xl bg-slate-50 p-4">
+              <b className="text-ink">Exam mode</b>: {EXAM_MINUTES} minutes, flag questions, results at the end, score out of 1,000.
+            </div>
+            <div className="rounded-xl bg-slate-50 p-4">
+              <b className="text-ink">Weak-topic review</b>: every question you missed, weakest area first.{' '}
+              <Link to="/pl300/review" className="font-semibold text-brand-700 hover:underline">
+                Open review →
+              </Link>
+            </div>
+          </div>
           <div className="grid gap-4 md:grid-cols-2">
             {TESTS.map((t) => {
               const locked = !t.free && !hasPl300();
@@ -51,18 +65,32 @@ export default function Pl300Page() {
                     )}
                   </div>
                   <p className="mt-2 text-slate-600">
-                    {t.questionIds.length} questions across all four skill areas. Practice mode: see the right answer and the explanation after each question.
+                    {t.questionIds.length} questions across all four skill areas, ending with the <b className="text-ink">{caseById(t.caseId)?.title}</b> case study.
                   </p>
                   <div className="mt-3 text-sm text-slate-500">
                     {best === null ? 'Not taken yet' : `Your best score: ${Math.round(best * 100)}% ${best >= PASS_MARK ? '(pass)' : '(below the 70% pass mark)'}`}
                   </div>
                   <div className="flex-1" />
-                  <Link
-                    to={locked ? '/pricing' : `/pl300/${t.id}`}
-                    className={`mt-5 rounded-full px-6 py-3 text-center font-display text-lg font-extrabold ${locked ? 'border-2 border-ink/10 text-ink hover:border-brand-500' : 'bg-brand-500 text-white shadow-[0_4px_0_var(--color-brand-700)] hover:bg-brand-600'}`}
-                  >
-                    {locked ? 'Unlock with Pro' : best === null ? 'Start the test' : 'Take it again'}
-                  </Link>
+                  {locked ? (
+                    <Link to="/pricing" className="mt-5 rounded-full border-2 border-ink/10 px-6 py-3 text-center font-display text-lg font-extrabold text-ink hover:border-brand-500">
+                      Unlock with Pro
+                    </Link>
+                  ) : (
+                    <div className="mt-5 grid gap-2 sm:grid-cols-2">
+                      <Link
+                        to={`/pl300/${t.id}`}
+                        className="rounded-full bg-brand-500 px-5 py-3 text-center font-display text-lg font-extrabold text-white shadow-[0_4px_0_var(--color-brand-700)] hover:bg-brand-600"
+                      >
+                        Practice
+                      </Link>
+                      <Link
+                        to={`/pl300/${t.id}?mode=exam`}
+                        className="rounded-full border-2 border-ink/15 px-5 py-3 text-center font-display text-lg font-extrabold text-ink hover:border-brand-500"
+                      >
+                        Exam · {EXAM_MINUTES} min
+                      </Link>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -87,8 +115,8 @@ export default function Pl300Page() {
             <div className="min-w-0 space-y-4 text-slate-700">
               <h2 className="font-display text-2xl font-extrabold tracking-tight text-ink">How to use these tests</h2>
               <p>
-                The real exam is scored from 100 to 1,000 and you need 700 to pass. We use 70% as the pass mark here. Take a test once to find your weak areas, practice those
-                chapters with hands-on exercises, then take the test again.
+                The real exam is scored from 100 to 1,000 and you need 700 to pass. Start in practice mode to learn from the explanations, then take each test in exam mode
+                against the clock. The weak-topic review collects your mistakes from every test and links to the hands-on chapters for each area.
               </p>
               <p>
                 Many PL-300 questions describe a situation and ask what you should do. The fastest way to get those right is to have done it: building relationships, cleaning data
