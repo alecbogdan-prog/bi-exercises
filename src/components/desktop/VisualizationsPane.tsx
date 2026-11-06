@@ -340,7 +340,7 @@ function FormatPane({ spec, onSpec }: { spec: VisualSpec; onSpec: (s: VisualSpec
     <div className="pb-4">
       <div className="flex gap-4 border-b border-d-border px-3">
         {(['visual', 'general'] as const).map((s) => (
-          <button key={s} onClick={() => setSub(s)} className={`relative pb-1.5 text-[12px] capitalize ${sub === s ? 'font-semibold' : 'text-d-sub'}`}>
+          <button key={s} data-format-sub={s} onClick={() => setSub(s)} className={`relative pb-1.5 text-[12px] capitalize ${sub === s ? 'font-semibold' : 'text-d-sub'}`}>
             {s === 'visual' ? 'Visual' : 'General'}
             {sub === s && <span className="absolute right-0 bottom-0 left-0 h-[2px] rounded bg-d-accent" />}
           </button>
@@ -371,6 +371,7 @@ function FormatPane({ spec, onSpec }: { spec: VisualSpec; onSpec: (s: VisualSpec
               <label className="block text-[11px] text-d-sub">
                 Text
                 <input
+                  aria-label="Title text"
                   value={f.titleText ?? ''}
                   onChange={(e) => set({ titleText: e.target.value })}
                   placeholder="Auto"
@@ -440,7 +441,7 @@ function FormatCard({
   children?: ReactNode;
 }) {
   return (
-    <div className="rounded-[4px] border border-d-border">
+    <div className="rounded-[4px] border border-d-border" data-format-card={name}>
       <div role="button" onClick={onOpen} className="flex h-9 cursor-pointer items-center gap-2 px-2 hover:bg-d-hover">
         <Ico.chevronRight className={`h-3 w-3 text-d-sub transition ${open ? 'rotate-90' : ''}`} />
         <span className="flex-1 text-[12px] font-semibold">{name}</span>

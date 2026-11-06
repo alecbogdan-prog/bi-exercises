@@ -277,7 +277,7 @@ function ExerciseView({ ex }: { ex: Exercise }) {
   // Simple view hint: point at the next click when we can work it out, otherwise the exercise's own hints in order.
   const showHint = () => {
     setHints((h) => h + 1);
-    const g = nextClick(ex, work, factTable);
+    const g = nextClick(ex, { ...work, relationships: work.relationships ?? ex.starterRelationships ?? base.model.relationships }, factTable);
     if (g) return setGuide(g);
     if (!ex.hints.length) return;
     const i = Math.min(textHints, ex.hints.length - 1);
@@ -311,6 +311,8 @@ function ExerciseView({ ex }: { ex: Exercise }) {
             ? '[data-testid="pq-editor"]'
             : c.kind === 'model'
               ? '[data-testid="model-view"]'
+              : c.kind === 'pages'
+                ? '[data-testid="report-page"]'
               : sol.spec.filters.length
                 ? `[data-filter-section="${sol.spec.filters[0].scope ?? 'visual'}"] [data-filter-card="${sol.spec.filters[0].column}"]`
                 : sol.spec.slicers?.length
@@ -330,7 +332,7 @@ function ExerciseView({ ex }: { ex: Exercise }) {
       done={project ? { href: chapterHref, label: 'See your finished dashboard 🎉' } : undefined}
       onCheck={check}
       onReset={reset}
-      onShowAnswer={focusedView ? fillAnswer : revealAnswer}
+      onShowAnswer={focusedView || ex.check.kind === 'pages' ? fillAnswer : revealAnswer}
       inset={wideEditor ? 'wide' : focusedView}
     />
   );
@@ -521,8 +523,8 @@ function ExerciseView({ ex }: { ex: Exercise }) {
                             {showSteps ? 'Hide steps' : 'Step by step'}
                           </button>
                         )}
-                        <button onClick={() => setShowSolution(!showSolution)} className="text-slate-500 hover:underline">
-                          {showSolution ? 'Hide solution' : 'Show solution'}
+                        <button onClick={() => (ex.check.kind === 'pages' ? fillAnswer() : setShowSolution(!showSolution))} className="text-slate-500 hover:underline">
+                          {ex.check.kind === 'pages' ? 'Show answer' : showSolution ? 'Hide solution' : 'Show solution'}
                         </button>
                       </div>
                       <p className="text-xs text-slate-400">Solving without help earns 50 bonus points.</p>

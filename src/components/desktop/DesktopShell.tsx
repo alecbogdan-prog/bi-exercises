@@ -235,6 +235,7 @@ function SingleVisualShell({ base, title, work, given, onChange: onWork, focus, 
               <button
                 key={v}
                 onClick={() => setView(v)}
+                data-testid={`mini-view-${v}`}
                 aria-pressed={view === v}
                 className={`flex h-8 items-center gap-1.5 rounded-[4px] px-2.5 ${view === v ? 'bg-white font-semibold text-d-text shadow-sm' : 'text-d-sub hover:bg-d-hover'}`}
               >
@@ -249,7 +250,7 @@ function SingleVisualShell({ base, title, work, given, onChange: onWork, focus, 
             </button>
           )}
           {focus === 'query' && (
-            <button onClick={() => setPqOpen(true)} className="flex h-8 items-center gap-1.5 rounded-[4px] px-2.5 text-d-text hover:bg-d-hover">
+            <button onClick={() => setPqOpen(true)} data-testid="mini-transform" className="flex h-8 items-center gap-1.5 rounded-[4px] px-2.5 text-d-text hover:bg-d-hover">
               <Ico.table className="h-4 w-4 text-d-sub" />
               Transform data
             </button>

@@ -300,7 +300,7 @@ export function PowerQueryEditor({ source, steps, onSteps, onClose, onToast }: P
         <div className="flex h-8 items-end gap-0.5 px-2">
           <span className="mb-1 px-3 py-1 text-[12.5px]">File</span>
           {(['Home', 'Transform', 'Add Column'] as const).map((t) => (
-            <button key={t} onClick={() => setTab(t)} className={`relative px-3 pt-1 pb-2 text-[12.5px] hover:bg-d-hover ${t === tab ? 'font-semibold' : ''}`}>
+            <button key={t} data-pq-tab={t} onClick={() => setTab(t)} className={`relative px-3 pt-1 pb-2 text-[12.5px] hover:bg-d-hover ${t === tab ? 'font-semibold' : ''}`}>
               {t}
               {t === tab && <span className="absolute right-3 bottom-0.5 left-3 h-[3px] rounded-full bg-d-accent" />}
             </button>
@@ -363,6 +363,7 @@ export function PowerQueryEditor({ source, steps, onSteps, onClose, onToast }: P
                           <th
                             key={c.name}
                             data-col={c.name}
+                            data-selected={sel || undefined}
                             onClick={(e) => setSelCols(e.ctrlKey || e.metaKey ? (sel ? selCols.filter((x) => x !== c.name) : [...selCols, c.name]) : [c.name])}
                             onDoubleClick={() => setDialog({ kind: 'rename', column: c.name })}
                             className={`h-8 min-w-[120px] cursor-pointer border-r border-b border-d-border px-1.5 text-left font-semibold whitespace-nowrap ${sel ? 'bg-[#c7e0f4]' : 'hover:bg-d-hover'}`}
@@ -431,6 +432,7 @@ export function PowerQueryEditor({ source, steps, onSteps, onClose, onToast }: P
             {['Source', ...names].map((n, i) => (
               <li
                 key={n + i}
+                data-pq-step={i}
                 onClick={() => setSelStep(i)}
                 className={`group flex cursor-pointer items-center gap-1.5 px-3 py-1 text-[12px] ${i === at ? 'bg-d-pressed font-semibold' : 'hover:bg-d-hover'}`}
               >

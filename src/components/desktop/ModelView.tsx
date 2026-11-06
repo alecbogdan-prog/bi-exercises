@@ -145,6 +145,7 @@ export function ModelView({
                       <div
                         key={c.name}
                         data-model-field={id}
+                        data-link-from={linkFrom?.table === t.name && linkFrom.column === c.name ? true : undefined}
                         draggable={editable}
                         onDragStart={(e) => {
                           e.dataTransfer.setData(REL_MIME, JSON.stringify({ table: t.name, column: c.name }));
@@ -204,6 +205,7 @@ export function ModelView({
             </p>
             {editable && (
               <button
+                data-testid="delete-rel"
                 onClick={() => {
                   onRelationships(rels.filter((x) => !same(x, selected)));
                   setSel(null);
@@ -254,6 +256,7 @@ export function ModelView({
             </label>
             <div className="mt-5 flex justify-end gap-2">
               <button
+                data-testid="save-rel"
                 onClick={() => {
                   onRelationships([...rels, pending]);
                   setPending(null);

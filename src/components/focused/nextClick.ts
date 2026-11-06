@@ -1,8 +1,10 @@
 import type { HintTarget } from '../HintSpotlight';
 import { VIZ_GALLERY } from '../desktop/icons';
-import type { CalcColumn, Measure, Scalar } from '../../engine/model';
+import type { CalcColumn, Measure, Relationship, Scalar } from '../../engine/model';
+import type { Step } from '../../engine/query';
 import type { FieldFilter, FieldRef, FilterScope, VisualSpec } from '../../engine/visual';
-import { formatKey, valueLabel } from '../../engine/visual';
+import { DRILL_ALL, formatKey, valueLabel } from '../../engine/visual';
+import { queryStep } from './pqHints';
 import type { Exercise } from '../../exercises/types';
 import type { DragItem } from '../../lib/workspace';
 import { fieldUsed, wellsFor } from '../../lib/workspace';
@@ -17,6 +19,10 @@ export interface WorkState {
   spec: VisualSpec;
   measures: Measure[];
   columns: CalcColumn[];
+  /** Power Query steps so far (starter steps included). */
+  steps?: Step[];
+  /** The model's relationships as the learner has them now. */
+  relationships?: Relationship[];
 }
 
 const SECTION: Record<FilterScope, string> = { visual: 'Filters on this visual', page: 'Filters on this page', all: 'Filters on all pages' };
@@ -120,7 +126,97 @@ function reportStep(ex: Exercise, spec: VisualSpec, fact: string): NextClick | n
     if (!open) return { hint: { target: `${card} [role="button"]` }, text: `Open the ${want.column} filter card.` };
     return { hint: { target: `${card} [data-filter-value="${formatKey(v)}"]` }, text: `${toTick !== undefined ? 'Tick' : 'Untick'} ${formatKey(v)}.` };
   }
+  return ex.check.kind === 'report' ? extrasStep(ex.check, spec) : null;
+}
+
+const FORMAT_CARD: Record<string, string> = { dataLabels: 'Data labels', legend: 'Legend', totals: 'Totals', title: 'Title', xTitle: 'X-axis', yTitle: 'Y-axis' };
+const formatTabOpen = () => exists('[data-format-sub]');
+const openFormat: NextClick = { hint: { target: '[data-testid="pane-viz"] button[aria-label="Format visual"]' }, text: 'Open the Format visual tab (the brush icon) in Visualizations.' };
+
+/** Sorting, formatting, drill-down and conditional formatting: the controls after the fields and filters. */
+function extrasStep(c: Extract<Exercise['check'], { kind: 'report' }>, spec: VisualSpec): NextClick | null {
+  if (c.requireSort) {
+    const s = c.requireSort;
+    if (!spec.sort || spec.sort.by !== s.by || spec.sort.dir !== s.dir) {
+      const by = s.by === 'axis' ? spec.category.map((f) => f.column).join(', ') : valueLabel(spec.values[s.by]);
+      return {
+        hint: { target: '[data-testid="visual"] [aria-label="More options"]' },
+        text: `Open More options (…) on the visual, choose ${by}, then Sort ${s.dir === 'asc' ? 'ascending' : 'descending'}.`,
+      };
+    }
+  }
+  if (c.requireFormat) {
+    for (const [k, want] of Object.entries(c.requireFormat)) {
+      const f = spec.format ?? {};
+      if (k === 'titleText') {
+        if ((f.titleText ?? '').trim() === String(want)) continue;
+        if (!formatTabOpen()) return openFormat;
+        if (exists('input[aria-label="Title text"]')) return { hint: { target: 'input[aria-label="Title text"]' }, text: `Type the title “${want}”.` };
+        if (exists('[data-format-card="Title"]')) return { hint: { target: '[data-format-card="Title"] [role="button"]' }, text: 'Open the Title card.' };
+        return { hint: { target: '[data-format-sub="general"]' }, text: 'Click General: the title settings are there.' };
+      }
+      const on = k === 'dataLabels' ? !!f.dataLabels : (f as Record<string, unknown>)[k] !== false;
+      if (on === want) continue;
+      const card = spec.type === 'pie' || spec.type === 'donut' ? (k === 'dataLabels' ? 'Detail labels' : FORMAT_CARD[k]) : FORMAT_CARD[k];
+      if (!formatTabOpen()) return openFormat;
+      if (!exists(`[data-format-card="${card}"]`)) return { hint: { target: '[data-format-sub="visual"]' }, text: 'Click Visual.' };
+      return { hint: { target: `[data-format-card="${card}"] [aria-label="${card}"]` }, text: `Turn ${want ? 'on' : 'off'} ${card}.` };
+    }
+  }
+  if (c.requireConditional) {
+    const r = c.requireConditional;
+    const have = (spec.format?.conditional ?? []).find((x) => x.valueIndex === r.valueIndex);
+    const missing = (r.background && !have?.background) || (r.dataBars && !have?.dataBars);
+    if (missing) {
+      if (!formatTabOpen()) return openFormat;
+      const sw = r.background ? 'Background color' : 'Data bars';
+      if (exists(`[data-format-card="Cell elements"] [aria-label="${sw}"]`)) {
+        return { hint: { target: `[data-format-card="Cell elements"] [aria-label="${sw}"]` }, text: `Turn on ${sw} for ${valueLabel(spec.values[r.valueIndex])}.` };
+      }
+      if (!exists('[data-format-card="Cell elements"]')) return { hint: { target: '[data-format-sub="visual"]' }, text: 'Click Visual.' };
+      return { hint: { target: '[data-format-card="Cell elements"] [role="button"]' }, text: 'Open the Cell elements card.' };
+    }
+  }
+  if (c.requireDrill) {
+    const d = c.requireDrill;
+    const ok = spec.drill?.level === d.level && JSON.stringify(spec.drill?.path ?? []) === JSON.stringify(d.path);
+    if (!ok) {
+      if (d.path[0] === DRILL_ALL) {
+        return { hint: { target: '[data-testid="visual"] [aria-label="Go to the next level in the hierarchy"]' }, text: 'Click Go to the next level in the hierarchy (the double down arrow).' };
+      }
+      const mode = document.querySelector('[data-testid="visual"] [aria-label="Drill down mode"]');
+      if (mode?.getAttribute('aria-pressed') !== 'true') return { hint: { target: '[data-testid="visual"] [aria-label="Drill down mode"]' }, text: 'Turn on Drill down (the single down arrow).' };
+      return { hint: { target: '[data-testid="visual"]' }, text: `Now click the ${formatKey(d.path[0])} data point to drill into it.` };
+    }
+  }
   return null;
+}
+
+/** Model view: create the missing relationships, delete the wrong ones. */
+function modelStep(c: Extract<Exercise['check'], { kind: 'model' }>, rels: Relationship[]): NextClick | null {
+  const same = (a: Relationship, b: Relationship) => a.fromTable === b.fromTable && a.fromColumn === b.fromColumn && a.toTable === b.toTable && a.toColumn === b.toColumn;
+  if (exists('[role="dialog"][aria-label="Create relationship"]')) return { hint: { target: '[data-testid="save-rel"]' }, text: 'It should say many to one (*:1). Click Save.' };
+  const wrong = (c.forbidden ?? []).find((f) => rels.some((r) => same(r, f)));
+  const missing = c.required.find((r) => !rels.some((x) => same(x, r)));
+  if (!wrong && !missing) return null;
+  if (!exists('[data-testid="model-view"]')) return { hint: { target: '[data-testid="mini-view-model"]' }, text: 'Open the Model view.' };
+  if (wrong) {
+    if (exists('[data-testid="delete-rel"]')) return { hint: { target: '[data-testid="delete-rel"]' }, text: 'Delete this relationship.' };
+    return {
+      hint: { target: `[data-rel="${wrong.fromTable}.${wrong.fromColumn}->${wrong.toTable}.${wrong.toColumn}"]` },
+      text: `The relationship ${wrong.fromTable}[${wrong.fromColumn}] → ${wrong.toTable}[${wrong.toColumn}] is wrong. Click its line to select it.`,
+    };
+  }
+  const r = missing!;
+  const from = `${r.fromTable}.${r.fromColumn}`;
+  const to = `${r.toTable}.${r.toColumn}`;
+  const picked = (document.querySelector('[data-link-from]') as HTMLElement | null)?.dataset.modelField;
+  const next = picked === from ? to : picked === to ? from : from;
+  const [t, col] = next.split('.');
+  return {
+    hint: { target: `[data-model-field="${next}"]` },
+    text: picked === from || picked === to ? `Now click ${t}[${col}] to connect them.` : `Click ${r.fromTable}[${r.fromColumn}], then ${r.toTable}[${r.toColumn}].`,
+  };
 }
 
 /**
@@ -141,10 +237,8 @@ export function nextClick(ex: Exercise, work: WorkState, fact = 'Sales'): NextCl
     }
     return { hint: { target: '[data-testid="mini-new"]' }, text: c.kind === 'dax' ? 'Click New measure to open the formula bar.' : 'Click New column to open the formula bar.' };
   }
+  if (c.kind === 'query') return queryStep(ex.solution.steps ?? [], work.steps ?? ex.query?.starterSteps ?? []) ?? CHECK;
+  if (c.kind === 'model') return modelStep(c, work.relationships ?? ex.starterRelationships ?? []) ?? (c.report ? reportStep({ ...ex, check: c.report }, work.spec, fact) : null) ?? CHECK;
   if (c.kind !== 'report') return null;
-  const step = reportStep(ex, work.spec, fact);
-  if (step) return step;
-  // Sorting, formatting, drill and conditional formatting: the written hints explain those.
-  if (c.requireSort || c.requireFormat || c.requireDrill || c.requireConditional) return null;
-  return CHECK;
+  return reportStep(ex, work.spec, fact) ?? CHECK;
 }
