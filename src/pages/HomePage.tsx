@@ -226,35 +226,6 @@ export default function HomePage() {
           </section>
         )}
 
-        {/* Who's behind the site */}
-        <section className="bg-white" id="about" data-testid="about-section">
-          <div className="mx-auto grid max-w-5xl items-center gap-8 px-4 py-16 md:grid-cols-[auto_1fr] md:gap-12">
-            <div
-              className="mx-auto flex h-32 w-32 items-center justify-center rounded-full bg-brand-500 font-display text-5xl font-extrabold text-white shadow-[0_6px_0_var(--color-brand-700)] md:h-40 md:w-40 md:text-6xl"
-              aria-hidden
-            >
-              {FOUNDER.initial}
-            </div>
-            <div className="min-w-0">
-              <p className="mb-2 text-sm font-bold tracking-widest text-brand-600 uppercase">Who's behind {BRAND}</p>
-              <h2 className="font-display text-3xl leading-tight font-extrabold tracking-tight text-balance text-ink sm:text-4xl">Built by a student who wanted a Power BI job</h2>
-              <div className="mt-4 space-y-4 text-[17px] leading-relaxed text-slate-700">
-                <p>
-                  Hi, I'm {FOUNDER.name}. I'm a student working toward a job as a Power BI analyst. I built this site for myself, to make learning Power BI easier: short
-                  exercises I can actually do, with my answer checked right away, instead of one more hour of video.
-                </p>
-                <p>Every exercise here is one I wanted while I was learning. Now it's open to anyone on the same path, and I keep adding new ones.</p>
-              </div>
-              <p className="mt-5 text-slate-600">
-                <b className="text-ink">{FOUNDER.name}</b>, founder ·{' '}
-                <a href="mailto:support@powerbiexercise.com" className="font-semibold text-brand-700 hover:underline">
-                  support@powerbiexercise.com
-                </a>
-              </p>
-            </div>
-          </div>
-        </section>
-
         {/* Long-form copy (SEO) */}
         <section className="bg-white">
           <div className="mx-auto grid max-w-6xl gap-x-16 gap-y-12 px-4 py-16 md:grid-cols-2">
@@ -367,6 +338,35 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+        {/* Who's behind the site */}
+        <section className="border-t border-slate-200 bg-white" id="about" data-testid="about-section">
+          <div className="mx-auto grid max-w-5xl items-center gap-8 px-4 py-16 md:grid-cols-[auto_1fr] md:gap-12">
+            <div
+              className="mx-auto flex h-32 w-32 items-center justify-center rounded-full bg-brand-500 font-display text-5xl font-extrabold text-white shadow-[0_6px_0_var(--color-brand-700)] md:h-40 md:w-40 md:text-6xl"
+              aria-hidden
+            >
+              {FOUNDER.initial}
+            </div>
+            <div className="min-w-0">
+              <p className="mb-2 text-sm font-bold tracking-widest text-brand-600 uppercase">Who's behind {BRAND}</p>
+              <h2 className="font-display text-3xl leading-tight font-extrabold tracking-tight text-balance text-ink sm:text-4xl">Built by a student who wanted a Power BI job</h2>
+              <div className="mt-4 space-y-4 text-[17px] leading-relaxed text-slate-700">
+                <p>
+                  Hi, I'm {FOUNDER.name}. I'm a student working toward a job as a Power BI analyst. I built this site for myself, to make learning Power BI easier: short
+                  exercises I can actually do, with my answer checked right away, instead of one more hour of video.
+                </p>
+                <p>Every exercise here is one I wanted while I was learning. Now it's open to anyone on the same path, and I keep adding new ones.</p>
+              </div>
+              <p className="mt-5 text-slate-600">
+                <b className="text-ink">{FOUNDER.name}</b>, founder ·{' '}
+                <a href="mailto:support@powerbiexercise.com" className="font-semibold text-brand-700 hover:underline">
+                  support@powerbiexercise.com
+                </a>
+              </p>
+            </div>
+          </div>
+        </section>
+
       </main>
       <Footer />
     </div>
