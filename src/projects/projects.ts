@@ -5,7 +5,7 @@ import type { Step } from '../engine/query';
 import type { FieldRef, ValueField, VisualSpec, VisualType } from '../engine/visual';
 import { emptySpec } from '../engine/visual';
 import type { Person } from '../exercises/scenarios';
-import { DANA, MARCUS, PRIYA, SAM } from '../exercises/scenarios';
+import { DANA, MARCUS, NINA, OSKAR, PRIYA, RAY, SAM } from '../exercises/scenarios';
 import type { Exercise, ModuleId } from '../exercises/types';
 
 const f = (table: string, column: string): FieldRef => ({ table, column });
@@ -23,6 +23,8 @@ export interface Project {
   brief: { from: Person; message: string };
   /** What the learner practices, shown as chips. */
   skills: string[];
+  /** The sample dataset the project runs on (the bike shop when unset). */
+  dataset?: 'festival';
   steps: Exercise[];
 }
 
@@ -63,6 +65,7 @@ function buildProject(p: Omit<Project, 'steps'> & { base?: Measure[]; defs: Step
     const common = {
       id,
       project: p.id,
+      dataset: p.dataset,
       module: d.module,
       title: d.title,
       level: d.level,
@@ -547,8 +550,164 @@ const CUSTOMER_DEFS: StepDef[] = [
   },
 ];
 
-const DEFS: Record<string, StepDef[]> = { 'sales-dashboard': SALES_DEFS, 'targets-vs-actual': TARGET_DEFS, 'customer-insights': CUSTOMER_DEFS };
-const BASES: Record<string, Measure[]> = { 'sales-dashboard': [], 'targets-vs-actual': [TOTAL_SALES], 'customer-insights': [TOTAL_SALES] };
+// ---------------------------------------------------------------------------
+// Project 4: Pinewave Festival Dashboard (festival dataset, src/engine/festival.ts)
+// ---------------------------------------------------------------------------
+
+const fm = (name: string, expression: string, format?: Measure['format']): Measure => ({ name, table: 'Performances', expression, format });
+const TOTAL_ATT = fm('Total Attendance', 'SUM(Performances[Attendance])', 'integer');
+const SHOWS = fm('Shows', 'COUNTROWS(Performances)', 'integer');
+const MERCH_PER_FAN = fm('Merch per Fan', 'DIVIDE(SUM(Performances[Merch Sales]), [Total Attendance])', 'currency');
+const FILL_RATE = fm('Fill Rate', 'DIVIDE([Total Attendance], SUMX(Performances, RELATED(Stage[Capacity])))', 'percent');
+const ATT_SHARE = fm('Share of Attendance', 'DIVIDE([Total Attendance], CALCULATE([Total Attendance], ALL(Stage)))', 'percent');
+const STAGE = f('Stage', 'Stage');
+const DAY = f('Performances', 'Day');
+const GENRE = f('Artist', 'Genre');
+
+const FESTIVAL_DEFS: StepDef[] = [
+  {
+    title: 'How many fans came?',
+    level: 'Beginner',
+    module: 'dax-basics',
+    from: RAY,
+    message: 'The sponsors ask me one thing first: how many people did we get? Make it a measure so every chart uses the same number.',
+    deliver: 'A measure named Total Attendance, shown on a card.',
+    lesson: 'Every dashboard starts with its headline measure. `Performances` has one row per show, so the festival attendance is the sum of the Attendance column.',
+    task: ['Create the measure `Total Attendance = SUM(Performances[Attendance])`.', 'The card on the page already uses it.'],
+    hints: ['Use "New measure", type the formula and press Enter.'],
+    measure: TOTAL_ATT,
+    required: ['SUM'],
+    visual: spec({ type: 'card', values: [meas('Total Attendance')] }),
+    contexts: [[], [STAGE], [DAY]],
+    explanation: 'This counts visits to shows, not unique people: a fan who saw four shows counts four times. Say "attendance", not "visitors".',
+    tile: 'Total Attendance',
+  },
+  {
+    title: 'How many shows?',
+    level: 'Beginner',
+    module: 'dax-basics',
+    from: RAY,
+    message: 'Next to the crowd, show how many shows we put on.',
+    deliver: 'A measure named Shows, shown on a card.',
+    lesson: '`COUNTROWS(table)` counts the rows of a table in the current filter context. One row in Performances is one show.',
+    task: ['Create `Shows = COUNTROWS(Performances)`.'],
+    hints: ['COUNTROWS takes a table, not a column.'],
+    measure: SHOWS,
+    required: ['COUNTROWS'],
+    visual: spec({ type: 'card', values: [meas('Shows')] }),
+    contexts: [[], [DAY], [STAGE]],
+    explanation: 'Three days, four stages, five slots each: 60 shows.',
+    tile: 'Shows',
+  },
+  {
+    title: 'Merch per fan',
+    level: 'Intermediate',
+    module: 'dax-basics',
+    from: OSKAR,
+    message: 'I care about how much each fan spends at the merch stands, not the total. Can you give me merch per fan?',
+    deliver: 'A measure named Merch per Fan, shown on a card.',
+    lesson: 'Build measures from measures. Divide the merch total by your `[Total Attendance]` measure, and use `DIVIDE` so an empty selection shows blank instead of an error.',
+    task: ['Create `Merch per Fan = DIVIDE(SUM(Performances[Merch Sales]), [Total Attendance])`.'],
+    hints: ['Measure names go in square brackets: [Total Attendance].'],
+    measure: MERCH_PER_FAN,
+    required: ['DIVIDE'],
+    visual: spec({ type: 'card', values: [meas('Merch per Fan')] }),
+    contexts: [[], [GENRE], [DAY]],
+    explanation: 'A ratio like this answers "is it good?" better than a total: it stays comparable between a big stage and a small one.',
+    tile: 'Merch per Fan',
+  },
+  {
+    title: 'Crowds by stage',
+    level: 'Beginner',
+    module: 'reports',
+    from: RAY,
+    message: 'Under the numbers, show me how the crowd split across the four stages.',
+    deliver: 'A stacked column chart of Total Attendance by Stage.',
+    lesson: 'Put your measure in the chart instead of the raw column, so the chart and the cards always agree.',
+    task: ['Create a **Stacked column chart**.', 'X-axis: `Stage[Stage]`. Y-axis: the **Total Attendance** measure.'],
+    hints: ['Your measures are listed in the Performances table of the Data pane.'],
+    types: ['column'],
+    visual: spec({ type: 'column', category: [STAGE], values: [meas('Total Attendance')] }),
+    explanation: 'The Main Stage takes the biggest share, simply because it is the biggest: the Fill Rate step will check whether it was also the fullest.',
+    tile: 'Attendance by Stage',
+  },
+  {
+    title: 'The five biggest crowds',
+    level: 'Intermediate',
+    module: 'filters',
+    from: NINA,
+    message: 'For next year’s booking I want the five acts that drew the biggest crowds over the weekend.',
+    deliver: 'A bar chart of the top 5 artists by Total Attendance.',
+    lesson: 'A **Top N** filter on the axis field keeps only the N best items by a value. Here: Top 5 artists by Total Attendance.',
+    task: [
+      'Create a **Stacked bar chart** of **Total Attendance** by `Artist[Artist]`.',
+      'In **Filters on this visual**, set **Artist** to **Top N**: **Top 5** by **Total Attendance**, and apply.',
+    ],
+    hints: ['The Artist card is already in "Filters on this visual" because Artist is on the axis.'],
+    types: ['bar'],
+    visual: spec({
+      type: 'bar',
+      category: [f('Artist', 'Artist')],
+      values: [meas('Total Attendance')],
+      filters: [{ table: 'Artist', column: 'Artist', values: [], scope: 'visual', topN: { n: 5, valueIndex: 0 } }],
+    }),
+    explanation: 'Top N works on the measure, so it would update by itself if you added a Day slicer to the page.',
+    tile: 'Top 5 Acts',
+  },
+  {
+    title: 'Which day, which genre?',
+    level: 'Intermediate',
+    module: 'reports',
+    from: NINA,
+    message: 'Was Saturday really our big day, and which genres carried each day? One chart, please.',
+    deliver: 'A stacked column chart of Total Attendance by Day, split by Genre.',
+    lesson: 'A **Legend** splits every column by a second field. Day on the X-axis, Genre in the Legend: each column becomes a stack of genres.',
+    task: ['Create a **Stacked column chart**.', 'X-axis: `Performances[Day]`. Y-axis: **Total Attendance**.', 'Legend: choose `Artist[Genre]` from **+ Add a field…** in the **Legend** box.'],
+    hints: ['Ticking a second text field adds it to the X-axis, not the Legend. Use the list in the Legend box instead.'],
+    types: ['column'],
+    visual: spec({ type: 'column', category: [DAY], series: [GENRE], values: [meas('Total Attendance')] }),
+    explanation: 'Day and Genre come from two different tables, and both filter Performances through their relationships.',
+    tile: 'Attendance by Day and Genre',
+  },
+  {
+    title: 'How full was each stage?',
+    level: 'Advanced',
+    module: 'dax-advanced',
+    from: RAY,
+    message: 'Big stages always win on raw numbers. I want to know how full each stage was compared with its capacity.',
+    deliver: 'A measure named Fill Rate, in a table by Stage.',
+    lesson:
+      'Capacity lives in the `Stage` table, but it applies to every show. `SUMX(Performances, RELATED(Stage[Capacity]))` adds up the capacity of every show in context. Divide the attendance by it to get the fill rate.',
+    task: ['Create `Fill Rate = DIVIDE([Total Attendance], SUMX(Performances, RELATED(Stage[Capacity])))` and format it as a percentage.'],
+    hints: ['SUMX goes row by row through Performances; RELATED reads the capacity of that row’s stage.', 'SUM(Stage[Capacity]) alone would count each stage once, not once per show.'],
+    measure: FILL_RATE,
+    required: ['SUMX', 'RELATED', 'DIVIDE'],
+    visual: spec({ type: 'table', category: [STAGE], values: [meas('Total Attendance'), meas('Fill Rate')] }),
+    contexts: [[STAGE], [DAY], []],
+    explanation: 'Now the stages are comparable. All four were between 66% and 69% full: the Forest Stage was as full as the Main Stage, with less than a third of its crowd.',
+  },
+  {
+    title: 'Each stage’s share of the crowd',
+    level: 'Advanced',
+    module: 'calculate',
+    from: RAY,
+    message: 'Last one for the sponsor deck: what share of all fans did each stage get? Put it next to the fill rate.',
+    deliver: 'A measure named Share of Attendance, in a table by Stage with Fill Rate.',
+    lesson:
+      'A share is "this row ÷ all rows". `CALCULATE([Total Attendance], ALL(Stage))` removes the stage filter, so it returns the festival total on every row of the table.',
+    task: ['Create `Share of Attendance = DIVIDE([Total Attendance], CALCULATE([Total Attendance], ALL(Stage)))` and format it as a percentage.'],
+    hints: ['ALL(Stage) ignores the stage on the row, but keeps any other filter, like a Day slicer.'],
+    measure: ATT_SHARE,
+    required: ['CALCULATE', 'ALL'],
+    visual: spec({ type: 'table', category: [STAGE], values: [meas('Total Attendance'), meas('Fill Rate'), meas('Share of Attendance')] }),
+    contexts: [[STAGE], [STAGE, DAY]],
+    explanation: 'Your festival dashboard is done: headline numbers, crowds by stage, top acts, the day-by-genre mix, and how full and how important each stage was.',
+    tile: 'Stages at a glance',
+  },
+];
+
+const DEFS: Record<string, StepDef[]> = { 'sales-dashboard': SALES_DEFS, 'targets-vs-actual': TARGET_DEFS, 'customer-insights': CUSTOMER_DEFS, 'festival-dashboard': FESTIVAL_DEFS };
+const BASES: Record<string, Measure[]> = { 'sales-dashboard': [], 'targets-vs-actual': [TOTAL_SALES], 'customer-insights': [TOTAL_SALES], 'festival-dashboard': [] };
 
 export const PROJECTS: Project[] = [
   buildProject({
@@ -579,6 +738,20 @@ export const PROJECTS: Project[] = [
     skills: ['DISTINCTCOUNT', 'RANKX', 'Top N filters', '% of total'],
     base: [TOTAL_SALES],
     defs: CUSTOMER_DEFS,
+  }),
+  buildProject({
+    id: 'festival-dashboard',
+    title: 'Pinewave Festival Dashboard',
+    tagline: 'Turn three days of shows into a sponsor-ready festival dashboard.',
+    free: false,
+    dataset: 'festival',
+    brief: {
+      from: RAY,
+      message:
+        'The weekend is over and the sponsors want numbers by Friday. I need one page: how many fans came, where they went, which acts pulled the biggest crowds, and how full each stage really was.',
+    },
+    skills: ['Measures', 'Top N filters', 'Legend splits', 'SUMX + RELATED', 'CALCULATE + ALL'],
+    defs: FESTIVAL_DEFS,
   }),
 ];
 

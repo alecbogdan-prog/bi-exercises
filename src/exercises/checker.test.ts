@@ -1,14 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { Engine } from '../engine/engine';
 import { buildModel } from '../engine/dataset';
+import { buildFestivalModel } from '../engine/festival';
 import { checkExercise } from './checker';
 import { EXERCISES, exerciseById } from './exercises';
 
-const base = new Engine(buildModel());
+const baseEngine = new Engine(buildModel());
+const base = baseEngine;
+const festival = new Engine(buildFestivalModel());
 
 describe('every exercise', () => {
   for (const ex of EXERCISES) {
     it(`${ex.id}: solution passes, starter fails`, () => {
+      const base = ex.dataset === 'festival' ? festival : baseEngine;
       const sol = checkExercise(base, ex, ex.solution.spec, ex.solution.measures ?? [], ex.solution.columns ?? [], { steps: ex.solution.steps, relationships: ex.solution.relationships, report: ex.solution.report });
       expect(sol.messages).toEqual([]);
       expect(sol.ok).toBe(true);

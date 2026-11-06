@@ -46,7 +46,7 @@ export function FiltersPane({ engine, spec, onSpec, onAdd, pickToAdd = false }: 
   const isAuto = (card: FieldFilter) => visualFields.some((f) => same(f, card));
 
   const section = (title: string, scope: FilterScope, cards: FieldFilter[], extra?: ReactNode) => (
-    <div className="mb-3">
+    <div className="mb-3" data-filter-section={scope}>
       <div className="mb-1.5 text-[12px] font-semibold">{title}</div>
       <div className="space-y-1.5">
         {extra}
@@ -265,6 +265,8 @@ function FilterCard({
                 <div className="rounded-[2px] border border-dashed border-d-strong px-2 py-1 text-[11px] text-d-faint">Add a value to the visual first</div>
               )}
               <button
+                data-apply-filter
+               
                 disabled={!valueLabels.length || !Number(topCount)}
                 onClick={() => onPatch({ values: [], topN: { n: Number(topCount), valueIndex: Number(byValue || 0), bottom: topDir === 'bottom' || undefined } })}
                 className="h-7 w-full rounded-[2px] border border-d-strong text-[12px] font-semibold hover:bg-d-hover disabled:opacity-40"
@@ -281,7 +283,7 @@ function FilterCard({
               Select all
             </label>
             {shown.map((v) => (
-              <label key={JSON.stringify(v)} className="flex cursor-pointer items-center gap-2 px-0.5 py-0.5">
+              <label key={JSON.stringify(v)} className="flex cursor-pointer items-center gap-2 px-0.5 py-0.5" data-filter-value={formatKey(v)}>
                 <input type="checkbox" checked={selected.has(JSON.stringify(v))} onChange={() => toggle(v)} />
                 {formatKey(v)}
               </label>

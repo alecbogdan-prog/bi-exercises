@@ -18,12 +18,13 @@ import { projectOf } from '../projects/projects';
 import { COMPANY } from '../exercises/scenarios';
 import type { Exercise } from '../exercises/types';
 import { MODULES } from '../exercises/types';
-import { baseEngine } from '../lib/base';
+import { engineFor } from '../lib/base';
+import { FESTIVAL } from '../engine/festival';
 import { Paragraphs, inline } from '../lib/md';
 import { awardPoints, clearWork, completedIds, loadWork, markCompleted, saveWork, startedIds, stats } from '../lib/storage';
 import { pointsFor } from '../lib/points';
 import { ActionBar, ChapterProgress, LessonList, ProgressBar, StatsChip } from '../components/Progress';
-import { canFocus, isPlainVisual, needsFilters } from '../components/focused/canFocus';
+import { canFocus, needsFilters } from '../components/focused/canFocus';
 import { nextClick } from '../components/focused/nextClick';
 import type { NextClick } from '../components/focused/nextClick';
 import { LockedEditor, ProUnlockCard } from '../components/ProLock';
@@ -172,7 +173,7 @@ function ExerciseTopBar({ crumbs, right }: { crumbs: { label: string; to?: strin
 }
 
 function ExerciseView({ ex }: { ex: Exercise }) {
-  const base = baseEngine();
+  const base = engineFor(ex);
   const saved = useMemo(() => loadWork(ex.id), [ex.id]);
   const fresh = (): Work => ({ spec: ex.starter, measures: [], columns: [], report: ex.report });
   const [work, setWork] = useState<Work>(() => (saved ? { ...saved, columns: saved.columns ?? [], report: saved.report ?? ex.report } : fresh()));
@@ -261,7 +262,7 @@ function ExerciseView({ ex }: { ex: Exercise }) {
   const focus = ex.check.kind === 'dax' ? 'measure' : ex.check.kind === 'column' ? 'column' : ex.check.kind === 'query' ? 'query' : ex.check.kind === 'model' ? 'model' : ex.check.kind === 'pages' ? 'pages' : 'report';
   const shellProps = {
     base,
-    title: `${COMPANY} Sales Report`,
+    title: ex.dataset === 'festival' ? `${FESTIVAL} Report` : `${COMPANY} Sales Report`,
     work,
     given,
     onChange,
@@ -272,11 +273,11 @@ function ExerciseView({ ex }: { ex: Exercise }) {
     columnTable: ex.check.kind === 'column' ? ex.check.table : undefined,
   } as const;
   const shell = <DesktopShell key={resetKey} {...shellProps} filtersOpenInitially={ex.module === 'filters'} />;
-  const plainVisual = isPlainVisual(ex);
+  const factTable = base.model.tables[0]?.name ?? 'Sales';
   // Simple view hint: point at the next click when we can work it out, otherwise the exercise's own hints in order.
   const showHint = () => {
     setHints((h) => h + 1);
-    const g = nextClick(ex, work.spec);
+    const g = nextClick(ex, work, factTable);
     if (g) return setGuide(g);
     if (!ex.hints.length) return;
     const i = Math.min(textHints, ex.hints.length - 1);
@@ -286,6 +287,39 @@ function ExerciseView({ ex }: { ex: Exercise }) {
   };
 
   const focusedView = canFocus(ex) && !locked && !full;
+  // Simple view "Show answer": fill the solution into the editor and point at it (no bonus points, like a hint).
+  const fillAnswer = () => {
+    const sol = ex.solution;
+    onChange({
+      ...work,
+      spec: sol.spec,
+      measures: [...(sol.measures ?? [])],
+      columns: sol.columns ?? work.columns,
+      steps: sol.steps ?? work.steps,
+      relationships: sol.relationships ?? work.relationships,
+      report: sol.report ?? work.report,
+    });
+    setShowSolution(true);
+    setResetKey((k) => k + 1);
+    const c = ex.check;
+    const target =
+      c.kind === 'dax'
+        ? `[data-testid="data-pane"] [data-field="${factTable}.${c.measureName}"]`
+        : c.kind === 'column'
+          ? `[data-testid="data-pane"] [data-field="${c.table}.${c.name}"]`
+          : c.kind === 'query'
+            ? '[data-testid="pq-editor"]'
+            : c.kind === 'model'
+              ? '[data-testid="model-view"]'
+              : sol.spec.filters.length
+                ? `[data-filter-section="${sol.spec.filters[0].scope ?? 'visual'}"] [data-filter-card="${sol.spec.filters[0].column}"]`
+                : sol.spec.slicers?.length
+                  ? '[data-testid="slicer-0"]'
+                  : '[data-testid="visual"]';
+    setGuide({ hint: { target, label: 'The answer' }, text: 'Here is the answer, filled in for you. Look at what changed, then click Check answer.' });
+  };
+  // Exercises that also show the Filters pane need the room: the leaderboard moves to the left column.
+  const wideEditor = focusedView && needsFilters(ex);
   const crumbs = [{ label: 'Exercises', to: '/exercises' }, project ? { label: project.title, to: chapterHref } : { label: module.title, to: '/exercises' }, { label: ex.title }];
   const actionBar = (
     <ActionBar
@@ -296,9 +330,8 @@ function ExerciseView({ ex }: { ex: Exercise }) {
       done={project ? { href: chapterHref, label: 'See your finished dashboard 🎉' } : undefined}
       onCheck={check}
       onReset={reset}
-      onShowAnswer={focusedView ? (plainVisual ? showHint : () => setShowSolution(true)) : revealAnswer}
-      onDismiss={() => setResult(null)}
-      inset={focusedView}
+      onShowAnswer={focusedView ? fillAnswer : revealAnswer}
+      inset={wideEditor ? 'wide' : focusedView}
     />
   );
 
@@ -308,8 +341,9 @@ function ExerciseView({ ex }: { ex: Exercise }) {
       <div className="flex h-full flex-col">
         <ExerciseTopBar crumbs={crumbs} right={<StatsChip stats={myStats} />} />
         <div className="min-h-0 flex-1 overflow-y-auto bg-cream">
-          <div className="mx-auto grid max-w-[1600px] gap-5 p-4 lg:h-full lg:grid-cols-[300px_minmax(0,1fr)_280px] lg:p-6">
-            <aside className="order-3 lg:order-1 lg:min-h-0 lg:overflow-y-auto">
+          <div className={`mx-auto grid max-w-[1600px] gap-5 p-4 lg:h-full lg:p-6 ${wideEditor ? 'lg:grid-cols-[300px_minmax(0,1fr)]' : 'lg:grid-cols-[300px_minmax(0,1fr)_280px]'}`}>
+            <aside className="order-3 space-y-4 lg:order-1 lg:min-h-0 lg:overflow-y-auto">
+              {wideEditor && <Leaderboard stats={myStats} compact />}
               <LessonList lessons={chapter} currentId={ex.id} status={lessonStatus} />
             </aside>
             <main className="order-1 flex min-w-0 flex-col lg:order-2 lg:min-h-0">
@@ -336,16 +370,14 @@ function ExerciseView({ ex }: { ex: Exercise }) {
                   <DesktopShell key={resetKey} {...shellProps} filtersOpenInitially={needsFilters(ex)} showFilters={needsFilters(ex)} minimal />
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px]">
-                  {(plainVisual || textHints < ex.hints.length || hints === 0) && (
+                  {(hints === 0 || textHints < ex.hints.length || ex.check.kind === 'report' || ex.check.kind === 'dax' || ex.check.kind === 'column') && (
                     <button onClick={showHint} className="font-medium text-brand-700 hover:underline" data-testid="show-hint">
-                      {hints === 0 ? 'Show a hint' : plainVisual ? 'Show me the next step' : 'Another hint'}
+                      {hints === 0 ? 'Show a hint' : 'Show me the next step'}
                     </button>
                   )}
-                  {!plainVisual && (
-                    <button onClick={() => setShowSolution(!showSolution)} className="text-slate-500 hover:underline" data-testid="show-solution">
-                      {showSolution ? 'Hide answer' : 'Show answer'}
-                    </button>
-                  )}
+                  <button onClick={fillAnswer} className="text-slate-500 hover:underline" data-testid="show-solution">
+                    Show answer
+                  </button>
                   <span className="flex-1" />
                   <button onClick={() => setFull(true)} className="text-slate-500 hover:text-ink hover:underline" data-testid="open-full">
                     Open in full Power BI ↗
@@ -356,14 +388,13 @@ function ExerciseView({ ex }: { ex: Exercise }) {
                     💡 {inline(h)}
                   </div>
                 ))}
-                {showSolution && !plainVisual && (
-                  <pre className="mt-2 overflow-x-auto rounded-md bg-ink p-3 font-mono text-sm leading-6 whitespace-pre-wrap text-slate-100">{describeSolution(ex).join('\n')}</pre>
-                )}
               </div>
             </main>
-            <aside className="order-2 lg:order-3 lg:min-h-0 lg:overflow-y-auto">
-              <Leaderboard stats={myStats} compact />
-            </aside>
+            {!wideEditor && (
+              <aside className="order-2 lg:order-3 lg:min-h-0 lg:overflow-y-auto">
+                <Leaderboard stats={myStats} compact />
+              </aside>
+            )}
           </div>
         </div>
         {actionBar}

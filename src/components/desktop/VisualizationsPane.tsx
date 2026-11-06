@@ -22,9 +22,11 @@ interface Props {
   onAddSlicer: () => void;
   onDrop: (well: WellId, item: DragItem) => void;
   onUnavailable: (label: string) => void;
+  /** Simple view: each field well gets a "+ Add a field…" list, so nothing needs dragging. */
+  pickToAdd?: boolean;
 }
 
-export function VisualizationsPane({ engine, spec, selection, onSpec, onSelectVisual, onAddSlicer, onDrop, onUnavailable }: Props) {
+export function VisualizationsPane({ engine, spec, selection, onSpec, onSelectVisual, onAddSlicer, onDrop, onUnavailable, pickToAdd = false }: Props) {
   const [tab, setTab] = useState<'build' | 'format'>('build');
   const slicerIndex = selection.kind === 'slicer' ? selection.index : -1;
   const slicer = slicerIndex >= 0 ? spec.slicers?.[slicerIndex] : undefined;
@@ -72,7 +74,7 @@ export function VisualizationsPane({ engine, spec, selection, onSpec, onSelectVi
                 onRemove={() => onSpec({ ...spec, slicers: (spec.slicers ?? []).map((x, i) => (i === slicerIndex ? { table: '', column: '', values: [] } : x)) })}
               />
             ) : (
-              wellsFor(spec.type).map((w, i) => <Well key={w.label + i} def={w} engine={engine} spec={spec} onSpec={onSpec} onDrop={(item) => onDrop(w.id, item)} />)
+              wellsFor(spec.type).map((w, i) => <Well key={w.label + i} def={w} engine={engine} spec={spec} onSpec={onSpec} onDrop={(item) => onDrop(w.id, item)} pickToAdd={pickToAdd} />)
             )}
           </div>
         </>
@@ -125,7 +127,7 @@ function PaneTab({ active, onClick, title, children }: { active: boolean; onClic
   );
 }
 
-function Well({ def, engine, spec, onSpec, onDrop }: { def: WellDef; engine: Engine; spec: VisualSpec; onSpec: (s: VisualSpec) => void; onDrop: (i: DragItem) => void }) {
+function Well({ def, engine, spec, onSpec, onDrop, pickToAdd = false }: { def: WellDef; engine: Engine; spec: VisualSpec; onSpec: (s: VisualSpec) => void; onDrop: (i: DragItem) => void; pickToAdd?: boolean }) {
   const [over, setOver] = useState(false);
   const removeAt = (list: 'category' | 'series' | 'values', i: number) => onSpec({ ...spec, [list]: (spec[list] as unknown[]).filter((_, j) => j !== i) });
   const setAgg = (i: number, agg: Agg) => onSpec({ ...spec, values: spec.values.map((x, j) => (j === i && x.kind === 'column' ? { ...x, agg } : x)) });
@@ -173,11 +175,51 @@ function Well({ def, engine, spec, onSpec, onDrop }: { def: WellDef; engine: Eng
         className={`space-y-[3px] rounded-[2px] ${over ? 'bg-[#deecf9] outline outline-1 outline-d-accent' : ''}`}
       >
         {chips}
-        {(!def.max || chips.length < def.max) && (
-          <div className={`flex h-[26px] items-center rounded-[2px] border px-2 text-[12px] ${chips.length ? 'border-dashed border-d-border text-d-faint' : 'border-d-strong text-d-faint'}`}>Add data fields here</div>
-        )}
+        {(!def.max || chips.length < def.max) &&
+          (pickToAdd && def.id !== 'unsupported' ? (
+            <WellPicker engine={engine} label={def.label} measures={def.id === 'values' || def.id === 'lineValues' || def.id === 'columns'} onPick={onDrop} />
+          ) : (
+            <div className={`flex h-[26px] items-center rounded-[2px] border px-2 text-[12px] ${chips.length ? 'border-dashed border-d-border text-d-faint' : 'border-d-strong text-d-faint'}`}>Add data fields here</div>
+          ))}
       </div>
     </div>
+  );
+}
+
+/** Simple view: pick a field for this well from a list (columns by table, plus measures where they are allowed). */
+function WellPicker({ engine, label, measures, onPick }: { engine: Engine; label: string; measures: boolean; onPick: (i: DragItem) => void }) {
+  const ms = measures ? (engine.model.measures ?? []) : [];
+  return (
+    <select
+      value=""
+      aria-label={`Add a field to ${label}`}
+      onChange={(e) => {
+        if (e.target.value) onPick(JSON.parse(e.target.value) as DragItem);
+      }}
+      className="h-[26px] w-full rounded-[2px] border border-dashed border-d-strong bg-white px-1.5 text-[12px] text-d-faint"
+    >
+      <option value="">+ Add a field…</option>
+      {ms.length > 0 && (
+        <optgroup label="Measures">
+          {ms.map((m) => (
+            <option key={m.name} value={JSON.stringify({ kind: 'measure', name: m.name })}>
+              {m.name}
+            </option>
+          ))}
+        </optgroup>
+      )}
+      {engine.model.tables.map((t) => (
+        <optgroup key={t.name} label={t.name}>
+          {t.columns
+            .filter((c) => !c.hidden)
+            .map((c) => (
+              <option key={c.name} value={JSON.stringify({ kind: 'column', table: t.name, column: c.name })}>
+                {c.name}
+              </option>
+            ))}
+        </optgroup>
+      ))}
+    </select>
   );
 }
 

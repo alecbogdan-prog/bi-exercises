@@ -1,14 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { checkExercise } from '../exercises/checker';
 import { EXERCISES } from '../exercises/exercises';
-import { baseEngine } from '../lib/base';
+import { engineFor } from '../lib/base';
 import { PROJECTS, PROJECT_STEPS, dashboardTiles } from './projects';
-
-const base = baseEngine();
 
 describe('projects', () => {
   for (const ex of PROJECT_STEPS) {
     it(`${ex.id}: solution passes, starter fails`, () => {
+      const base = engineFor(ex);
       const sol = checkExercise(base, ex, ex.solution.spec, ex.solution.measures ?? [], ex.solution.columns ?? [], { steps: ex.solution.steps, relationships: ex.solution.relationships });
       expect(sol.messages).toEqual([]);
       expect(sol.ok).toBe(true);
