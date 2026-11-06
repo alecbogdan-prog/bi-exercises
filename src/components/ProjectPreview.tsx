@@ -6,7 +6,7 @@ import { LockIcon } from './ProLock';
 import { computeVisual } from '../engine/visual';
 import { canOpen } from '../lib/access';
 import { engineFor } from '../lib/base';
-import { FESTIVAL } from '../engine/festival';
+import { orgOf } from '../engine/datasets';
 import { completedIds } from '../lib/storage';
 import { dashboardTiles, projectMeasures } from '../projects/projects';
 import type { Project } from '../projects/projects';
@@ -25,7 +25,7 @@ function MiniDashboard({ project: p }: { project: Project }) {
       <div className="flex items-center gap-2 bg-ink px-3 py-2 text-[13px] font-semibold text-white">
         <span className="h-2.5 w-2.5 rounded-sm bg-[#f2c811]" aria-hidden="true" />
         {(() => {
-          const org = p.dataset === 'festival' ? FESTIVAL : 'Ridgeline Cycles';
+          const org = orgOf(p.dataset);
           return p.title.startsWith(org) ? p.title : `${org} · ${p.title}`;
         })()}
       </div>

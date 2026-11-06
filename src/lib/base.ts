@@ -1,6 +1,7 @@
 import { Engine } from '../engine/engine';
 import { sampleModel } from '../engine/dataset';
-import { festivalModel } from '../engine/festival';
+import { DATASETS } from '../engine/datasets';
+import type { DatasetId } from '../engine/datasets';
 
 let engine: Engine | null = null;
 
@@ -10,17 +11,14 @@ export function baseEngine(): Engine {
   return engine;
 }
 
-let festival: Engine | null = null;
+const themed = new Map<DatasetId, Engine>();
 
-/** Shared engine over the themed Pinewave Festival dataset. */
-export function festivalEngine(): Engine {
-  if (!festival) festival = new Engine(festivalModel());
-  return festival;
-}
-
-/** The engine an exercise runs on (bike shop unless the exercise picks another dataset). */
-export function engineFor(ex: { dataset?: 'festival' }): Engine {
-  return ex.dataset === 'festival' ? festivalEngine() : baseEngine();
+/** The engine an exercise or project runs on (the bike shop unless it picks a themed dataset). */
+export function engineFor(ex: { dataset?: DatasetId }): Engine {
+  if (!ex.dataset) return baseEngine();
+  let e = themed.get(ex.dataset);
+  if (!e) themed.set(ex.dataset, (e = new Engine(DATASETS[ex.dataset].build())));
+  return e;
 }
 
 export const BRAND = 'Power BI Exercises';

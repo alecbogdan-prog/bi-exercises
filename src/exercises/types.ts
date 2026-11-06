@@ -1,3 +1,4 @@
+import type { DatasetId } from '../engine/datasets';
 import type { PagesCheck, ReportState } from '../report/report';
 import type { HintTarget } from '../components/HintSpotlight';
 import type { CalcColumn, Measure, Relationship } from '../engine/model';
@@ -56,7 +57,7 @@ export interface Exercise {
   /** Set for the steps of an end-to-end project (see src/projects). */
   project?: string;
   /** Which sample dataset the exercise runs on: the bike shop (default) or the themed festival data. */
-  dataset?: 'festival';
+  dataset?: DatasetId;
   module: ModuleId;
   title: string;
   level: 'Beginner' | 'Intermediate' | 'Advanced';

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Engine } from '../../engine/engine';
 import type { Relationship } from '../../engine/model';
 import { Ico } from './icons';
@@ -9,12 +9,12 @@ const ROW_H = 22;
 const REL_MIME = 'application/x-biex-relcol';
 
 const POS: Record<string, { x: number; y: number }> = {
-  Product: { x: 30, y: 30 },
-  Customer: { x: 760, y: 30 },
-  Sales: { x: 395, y: 150 },
-  Date: { x: 30, y: 330 },
-  Store: { x: 760, y: 330 },
-  Targets: { x: 395, y: 520 },
+  Product: { x: 20, y: 20 },
+  Customer: { x: 410, y: 20 },
+  Sales: { x: 215, y: 150 },
+  Date: { x: 20, y: 330 },
+  Store: { x: 410, y: 330 },
+  Targets: { x: 215, y: 520 },
 };
 
 const same = (a: Relationship, b: Relationship) =>
@@ -52,7 +52,28 @@ export function ModelView({
   const [linkFrom, setLinkFrom] = useState<{ table: string; column: string } | null>(null);
   const rels = base.model.relationships;
   const tables = base.model.tables;
-  const pos = (name: string, i: number) => POS[name] ?? { x: 30 + i * 230, y: 700 };
+  // The bike model has hand-placed tables; other datasets get a star: the fact table (first) in the middle, the rest around it.
+  const known = tables.every((t) => POS[t.name]);
+  const STAR = [
+    { x: 215, y: 140 },
+    { x: 20, y: 20 },
+    { x: 410, y: 20 },
+    { x: 20, y: 300 },
+    { x: 410, y: 300 },
+    { x: 215, y: 420 },
+  ];
+  const W = 610;
+  /** Fit the whole diagram to the canvas width, so no table hides off-screen (never above 100%). */
+  const scroller = useRef<HTMLDivElement>(null);
+  const [fit, setFit] = useState(1);
+  useEffect(() => {
+    const el = scroller.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setFit(Math.max(0.6, Math.min(1, (el.clientWidth - 8) / W))));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [W]);
+  const pos = (name: string, i: number) => (known ? POS[name] : (STAR[i] ?? { x: 20 + (i % 3) * 195, y: 600 }));
   const height = (name: string) => HEADER_H + base.table(name).columns.length * ROW_H + 8;
   const idx = (n: string) => tables.findIndex((t) => t.name === n);
   const center = (name: string) => {
@@ -68,7 +89,6 @@ export function ModelView({
     const s = Math.min(Math.abs(hw / (dx || 1e-9)), Math.abs(hh / (dy || 1e-9)));
     return { x: c.x + dx * s, y: c.y + dy * s };
   };
-  const W = 980;
   const H = Math.max(...tables.map((t, i) => pos(t.name, i).y + height(t.name))) + 40;
   const selected = sel && rels.find((r) => same(r, sel));
   const connect = (src: { table: string; column: string }, dst: { table: string; column: string }) => {
@@ -80,8 +100,8 @@ export function ModelView({
 
   return (
     <div className="flex min-h-0 flex-1" data-testid="model-view">
-      <div className="relative min-h-0 flex-1 overflow-auto bg-[#faf9f8]">
-        <div className="relative" style={{ width: W, height: H }} onMouseDown={() => setSel(null)}>
+      <div ref={scroller} className="relative min-h-0 flex-1 overflow-auto bg-[#faf9f8]">
+        <div className="relative" style={{ width: W, height: H, zoom: fit }} onMouseDown={() => setSel(null)}>
           <svg className="absolute inset-0" width={W} height={H}>
             {rels.map((r) => {
               if (idx(r.fromTable) === -1 || idx(r.toTable) === -1) return null;

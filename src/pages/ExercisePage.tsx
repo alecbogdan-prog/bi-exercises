@@ -19,7 +19,7 @@ import { COMPANY } from '../exercises/scenarios';
 import type { Exercise } from '../exercises/types';
 import { MODULES } from '../exercises/types';
 import { engineFor } from '../lib/base';
-import { FESTIVAL } from '../engine/festival';
+import { orgOf } from '../engine/datasets';
 import { Paragraphs, inline } from '../lib/md';
 import { awardPoints, clearWork, completedIds, loadWork, markCompleted, saveWork, startedIds, stats } from '../lib/storage';
 import { pointsFor } from '../lib/points';
@@ -262,7 +262,7 @@ function ExerciseView({ ex }: { ex: Exercise }) {
   const focus = ex.check.kind === 'dax' ? 'measure' : ex.check.kind === 'column' ? 'column' : ex.check.kind === 'query' ? 'query' : ex.check.kind === 'model' ? 'model' : ex.check.kind === 'pages' ? 'pages' : 'report';
   const shellProps = {
     base,
-    title: ex.dataset === 'festival' ? `${FESTIVAL} Report` : `${COMPANY} Sales Report`,
+    title: ex.dataset ? `${orgOf(ex.dataset)} Report` : `${COMPANY} Sales Report`,
     work,
     given,
     onChange,

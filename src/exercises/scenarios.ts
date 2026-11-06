@@ -30,6 +30,12 @@ export const RAY: Person = { name: 'Ray Calder', role: 'Festival Director, Pinew
 export const NINA: Person = { name: 'Nina Okafor', role: 'Head of Programming, Pinewave', initials: 'NO', color: '#c50f1f' };
 export const OSKAR: Person = { name: 'Oskar Lind', role: 'Merch Manager, Pinewave', initials: 'OL', color: '#986f0b' };
 
+// One fictional business per chapter for the themed exercises (src/engine/themes).
+export const GIULIA: Person = { name: 'Giulia Moretti', role: 'Owner, Slice & Co.', initials: 'GM', color: '#c4314b' };
+export const RHYS: Person = { name: 'Rhys Abara', role: 'Analyst, Northfield League', initials: 'RA', color: '#0b6a0b' };
+export const MAYA: Person = { name: 'Maya Lindqvist', role: 'Marketing Lead, Lumen Cinemas', initials: 'ML', color: '#4f6bed' };
+export const OWEN: Person = { name: 'Owen Price', role: 'Founder, Copperbean Coffee', initials: 'OP', color: '#8e562e' };
+
 export const SCENARIOS: Record<string, Scenario> = {
   'fest-exclude-tent': {
     from: RAY,
@@ -1018,5 +1024,125 @@ export const SCENARIOS: Record<string, Scenario> = {
     time: 'Fri 4:55 PM',
     message: 'Perfect. One last thing for the board: the growth % versus last year. Are we actually growing?',
     deliver: 'A measure named YoY % (growth versus last year).',
+  },
+  'pizza-connect-pizza': {
+    from: GIULIA,
+    time: 'Mon 8:40 AM',
+    message: "Our report says every pizza style made exactly the same money. That can't be right, can it?",
+    deliver: "A table of revenue by pizza style, with the model fixed.",
+  },
+  'pizza-connect-calendar': {
+    from: GIULIA,
+    time: 'Mon 11:15 AM',
+    message: "I want to plan staff by weekday. Which days actually bring in the money?",
+    deliver: "A column chart of revenue by day of the week.",
+  },
+  'pizza-fix-backwards': {
+    from: GIULIA,
+    time: 'Tue 9:30 AM',
+    message: "Riverton and Lakeview show the same revenue. Someone set up the store link, but it looks broken.",
+    deliver: "A bar chart of revenue by city, with the Store relationship fixed.",
+  },
+  'pizza-wrong-columns': {
+    from: GIULIA,
+    time: 'Tue 2:05 PM',
+    message: "Only four of our six drivers show any revenue. Everyone was out delivering, I promise.",
+    deliver: "A table of revenue by vehicle, with the Driver relationship on the right columns.",
+  },
+  'pizza-build-star': {
+    from: GIULIA,
+    time: 'Wed 10:00 AM',
+    message: "We moved everything to a fresh file and lost every relationship. Can you wire it back up?",
+    deliver: "A matrix of revenue by city and style, on a complete star schema.",
+  },
+  'calc-home-goals': {
+    from: RHYS,
+    time: 'Mon 9:00 AM',
+    message: "Pundits keep talking about home advantage. How many of each team's goals came at home?",
+    deliver: "A measure named Home Goals.",
+  },
+  'calc-league-goals': {
+    from: RHYS,
+    time: 'Mon 1:20 PM',
+    message: "Before we work out shares, I need the league's total goals next to every team.",
+    deliver: "A measure named League Goals.",
+  },
+  'calc-goal-share': {
+    from: RHYS,
+    time: 'Tue 10:10 AM',
+    message: "Which teams carry the scoring? Give me each team's share of all goals in the league.",
+    deliver: "A measure named Goal Share, as a percentage.",
+  },
+  'calc-all-seasons': {
+    from: RHYS,
+    time: 'Wed 3:30 PM',
+    message: "In the season matrix I also want each team's two-season total, on every row.",
+    deliver: "A measure named Points All Seasons.",
+  },
+  'calc-keepfilters-home': {
+    from: RHYS,
+    time: 'Thu 11:45 AM',
+    message: "Home points by venue keep showing up on the Away row too. Make it behave.",
+    deliver: "A measure named Home Points that respects the Venue filter.",
+  },
+  'cine-hidden-drafts': {
+    from: MAYA,
+    time: 'Mon 9:25 AM',
+    message: "I need a scratch page in the report for ideas, but managers shouldn't see it.",
+    deliver: "A hidden page named Drafts.",
+  },
+  'cine-highlight': {
+    from: MAYA,
+    time: 'Mon 2:40 PM',
+    message: "When I click a cinema, the film chart shrinks to a few bars. I'd rather see all films with that cinema highlighted.",
+    deliver: "Revenue by Cinema set to highlight Tickets by Film.",
+  },
+  'cine-drill-genre': {
+    from: MAYA,
+    time: 'Tue 10:50 AM',
+    message: "From any chart, I want to jump straight to the film list for one genre.",
+    deliver: "A drillthrough on Genre to the Films page.",
+  },
+  'cine-nav-buttons': {
+    from: MAYA,
+    time: 'Wed 9:15 AM',
+    message: "Our cinema managers never find the tabs. Give them buttons to move between Overview and Cinemas.",
+    deliver: "Navigation buttons Overview → Cinemas and back.",
+  },
+  'cine-tooltip-sync': {
+    from: MAYA,
+    time: 'Thu 4:00 PM',
+    message: "Two last touches: a mini page when you hover a film, and the genre choice should stick when I switch pages.",
+    deliver: "A tooltip page on Tickets by Film and a Genre slicer synced to Films.",
+  },
+  'cof-margin-var': {
+    from: OWEN,
+    time: 'Mon 7:50 AM',
+    message: "Revenue is fine, but what do we actually keep from each drink after the cost of the cup?",
+    deliver: "A measure named Margin %.",
+  },
+  'cof-rank-drinks': {
+    from: OWEN,
+    time: 'Mon 12:30 PM',
+    message: "Rank our menu by revenue. I'm thinking of dropping the bottom two.",
+    deliver: "A measure named Drink Rank.",
+  },
+  'cof-avg-per-shop': {
+    from: OWEN,
+    time: 'Tue 8:20 AM',
+    message: "What does an average shop sell in each category? I want a benchmark for the managers.",
+    deliver: "A measure named Avg Shop Revenue.",
+  },
+  'cof-peak-hour': {
+    from: OWEN,
+    time: 'Wed 7:35 AM',
+    message: "How many cups do we pour in each shop's busiest hour? That's what the rota has to cover.",
+    deliver: "A measure named Peak Hour Cups.",
+  },
+  'cof-dynamic-title': {
+    from: OWEN,
+    time: 'Thu 3:10 PM',
+    message: "The chart title should say which category is selected, or \"all drinks\" when nothing is.",
+    deliver: "A measure named Revenue Title.",
   },
 };
