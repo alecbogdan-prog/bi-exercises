@@ -7,7 +7,6 @@ import { MODULES } from '../exercises/types';
 import { BRAND } from '../lib/base';
 import { RibbonChart } from '../components/RibbonChart';
 import { KeyInfluencers } from '../components/KeyInfluencers';
-import { TryDax } from '../components/TryDax';
 
 const KEYWORDS = ['Reports & visuals', 'DAX measures', 'Power Query', 'Data modeling', 'Time intelligence', 'Much, much more'];
 
@@ -146,35 +145,6 @@ export default function HomePage() {
             <span>
               <b className="text-sunrise-500">2–5</b> minutes per exercise
             </span>
-          </div>
-        </section>
-
-        {/* Try it right here: three DAX challenges checked by the real engine */}
-        <section className="bg-white" id="try-it">
-          <div className="mx-auto max-w-5xl px-4 py-14">
-            <div className="mb-6 text-center">
-              <div className="text-sm font-bold tracking-wide text-brand-600 uppercase">Try it now, no sign-up</div>
-              <h2 className="mt-1 font-display text-3xl font-extrabold tracking-tight text-ink sm:text-4xl">Write your first DAX measure</h2>
-              <p className="mx-auto mt-2 max-w-2xl text-slate-600">Three quick challenges on a real sales model. Type a formula, press Check, and see if your numbers match.</p>
-            </div>
-            <TryDax />
-          </div>
-        </section>
-
-        {/* PL-300 band */}
-        <section className="bg-ink text-white">
-          <div className="mx-auto flex max-w-5xl flex-col items-center gap-5 px-4 py-12 text-center md:flex-row md:text-left">
-            <div className="flex-1">
-              <div className="text-sm font-bold tracking-wide text-sunrise-500 uppercase">Preparing for the exam?</div>
-              <h2 className="mt-1 font-display text-3xl font-extrabold tracking-tight sm:text-4xl">Pass the PL-300 with confidence</h2>
-              <p className="mt-2 max-w-2xl text-white/75">
-                Exam-style PL-300 practice tests across all four domains (prepare, model, visualize, manage), with an explanation for every answer and a score that tells you if
-                you're ready. The first test is free.
-              </p>
-            </div>
-            <Link to="/pl300" className="shrink-0 rounded-full bg-sunrise-500 px-6 py-3 font-display text-lg font-extrabold text-ink hover:bg-sunrise-400">
-              Take a free PL-300 practice test
-            </Link>
           </div>
         </section>
 
