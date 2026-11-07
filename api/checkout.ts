@@ -26,6 +26,10 @@ export async function POST(req: Request): Promise<Response> {
     client_reference_id: user.id,
     metadata,
     allow_promotion_codes: true,
+    // Required "I agree to the Terms" checkbox; the Terms say payments are non-refundable and access starts at once
+    // (waiving the EU/UK 14-day withdrawal right). The Terms URL is set in Stripe's Checkout settings.
+    // Managed Payments does not allow custom_text, so the wording lives in the Terms.
+    consent_collection: { terms_of_service: 'required' },
     // Stripe as merchant of record (handles VAT/sales tax, fraud and disputes). On in production, off in the test sandbox.
     ...(process.env.STRIPE_MANAGED_PAYMENTS === '1' ? { managed_payments: { enabled: true } } : {}),
     success_url: `${site}/account?checkout=success`,

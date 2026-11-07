@@ -132,7 +132,15 @@ export default function PricingPage() {
           ))}
         </div>
         <p className="mt-8 text-center text-xs text-slate-500">
-          {accountsEnabled ? 'Secure payment by Stripe. Cancel any time from your account.' : 'Payments are not live yet. Pro plans open soon; until then the free exercises are open to everyone.'}
+          {accountsEnabled ? (
+            <>
+              Secure payment by Stripe. Cancel any time from your account; you keep access until the end of the period you paid for. Access starts right after payment, so payments are non-refundable. See the{' '}
+              <Link to="/terms" className="underline">
+                Terms
+              </Link>
+              .
+            </>
+          ) :'Payments are not live yet. Pro plans open soon; until then the free exercises are open to everyone.'}
         </p>
       </main>
       <Footer />
