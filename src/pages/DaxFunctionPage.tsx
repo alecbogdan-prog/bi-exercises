@@ -37,11 +37,7 @@ export default function DaxFunctionPage() {
 
   return (
     <div className="flex min-h-full flex-col bg-white">
-      <Header>
-        <Link to={start} className="whitespace-nowrap rounded-full bg-brand-500 px-4 py-1.5 text-sm font-bold text-white hover:bg-brand-600">
-          Start free
-        </Link>
-      </Header>
+      <Header />
 
       <main className="flex-1">
         <article className="mx-auto max-w-3xl px-4 pt-10 pb-14">

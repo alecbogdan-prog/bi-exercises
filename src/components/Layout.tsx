@@ -2,15 +2,16 @@ import { Link, NavLink } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { BRAND } from '../lib/base';
 import { Logo } from './icons';
-import { useAccount } from '../lib/account';
+import { currentPlan, useAccount } from '../lib/account';
 import { GA_ID, reopenConsent } from '../lib/analytics';
 
 export function Header({ children }: { children?: ReactNode }) {
   const { email, team } = useAccount();
-  const nav = ({ isActive }: { isActive: boolean }) => `whitespace-nowrap rounded-md px-2 py-1.5 text-sm font-medium sm:px-2.5 ${isActive ? 'text-ink' : 'text-slate-500 hover:text-ink'}`;
+  const cta = 'shrink-0 whitespace-nowrap rounded-full bg-brand-500 px-3 py-1.5 text-sm font-bold text-white hover:bg-brand-600 sm:px-4';
+  const nav = ({ isActive }: { isActive: boolean }) => `whitespace-nowrap rounded-md px-1.5 py-1.5 text-sm font-medium sm:px-2.5 ${isActive ? 'text-ink' : 'text-slate-500 hover:text-ink'}`;
   return (
     <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 border-b border-slate-200 bg-white/95 px-4 backdrop-blur">
-      <Link to="/" className="mr-2 flex items-center gap-2 font-bold tracking-tight">
+      <Link to="/" className="mr-0 flex shrink-0 items-center gap-2 font-bold tracking-tight sm:mr-2">
         <Logo className="h-7 w-7" />
         <span className="hidden sm:inline">{BRAND}</span>
       </Link>
@@ -38,6 +39,17 @@ export function Header({ children }: { children?: ReactNode }) {
         <Link to="/team" className="hidden whitespace-nowrap rounded-full px-3 py-1 text-sm font-semibold text-slate-600 hover:text-ink md:block">
           Team
         </Link>
+      )}
+      {!email ? (
+        <Link to="/signup" className={cta} data-testid="header-signup">
+          Sign up
+        </Link>
+      ) : (
+        currentPlan() !== 'pro' && (
+          <Link to="/pricing" className={cta} data-testid="header-upgrade">
+            Upgrade
+          </Link>
+        )
       )}
       <Link to={email ? '/account' : '/login'} className="hidden whitespace-nowrap rounded-full border border-slate-300 px-3 py-1 text-sm font-semibold text-ink hover:border-brand-500 md:block">
         {email ? 'Account' : 'Log in'}
