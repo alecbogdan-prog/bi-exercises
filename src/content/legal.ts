@@ -3,7 +3,7 @@ import { BRAND } from '../lib/base';
 
 export type Section = { h: string; p: string[] };
 
-export const UPDATED = 'November 5, 2026';
+export const UPDATED = 'November 7, 2026';
 
 export const TERMS: Section[] = [
   {
@@ -17,7 +17,16 @@ export const TERMS: Section[] = [
     h: 'Accounts and paid plans',
     p: [
       'Some features, such as the full exercise library, all projects and all practice tests, are part of paid plans. Prices and what each plan includes are shown on the Pricing page.',
-      'When paid plans and accounts launch, you are responsible for keeping your login details safe and for all activity on your account. Subscriptions renew until you cancel them, and you keep access until the end of the period you paid for.',
+      'You are responsible for keeping your login details safe and for all activity on your account. Payments are processed by Stripe, which acts as the seller (merchant of record) for your purchase.',
+    ],
+  },
+  {
+    h: 'Cancellation and refunds',
+    p: [
+      'Pro subscriptions renew automatically, monthly or yearly, until you cancel. You can cancel at any time from your account page; you keep access until the end of the period you already paid for, and you are not charged again. To avoid the next charge, cancel before the renewal date.',
+      'All payments are final and non-refundable, including subscription renewals, unused time and PL-300 Prep purchases. We do not give partial or prorated refunds.',
+      'Paid content is digital and becomes available immediately after payment. By completing your purchase you ask for access to start straight away, and you acknowledge that you therefore lose the 14-day right of withdrawal that consumers in the EU and UK otherwise have for online purchases.',
+      'This does not affect any rights you have under the law that cannot be waived, for example if you were charged by mistake or the service does not work as described. If you think a charge is wrong, write to us and we will look into it.',
     ],
   },
   {
