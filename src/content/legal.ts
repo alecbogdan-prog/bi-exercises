@@ -70,6 +70,7 @@ export const PRIVACY: Section[] = [
     p: [
       'The site is hosted on Vercel, which processes standard request data such as your IP address to serve pages and keep the site secure. Accounts are stored with Supabase, sign-in and account emails are sent through Resend, and payments go through Stripe. Fonts are loaded from Google Fonts, which receives your IP address when the fonts load.',
       'If you accept analytics cookies, we use Google Analytics to count visits and see which pages are used, so we can improve them. Google receives your IP address and details about your browser and the pages you view. We do not use it for advertising.',
+      'We also use Ahrefs Web Analytics to count visits and see where visitors come from. It does not set cookies or track you across sites; Ahrefs receives your IP address, browser details and the pages you view, and reports them to us only as totals.',
     ],
   },
   {
