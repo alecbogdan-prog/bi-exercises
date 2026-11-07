@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Footer, Header } from '../components/Layout';
@@ -6,6 +6,7 @@ import { completedIds } from '../lib/storage';
 import { BRAND } from '../lib/base';
 import { useAccount } from '../lib/account';
 import { accountsEnabled, supabase } from '../lib/supabase';
+import { GOOGLE_CLIENT_ID, renderGoogleButton } from '../lib/googleSignIn';
 
 // Google sign-in needs the Google provider set up in Supabase first; turn the button on with VITE_GOOGLE_AUTH=1.
 const googleEnabled = import.meta.env.VITE_GOOGLE_AUTH === '1';
@@ -13,6 +14,36 @@ const googleEnabled = import.meta.env.VITE_GOOGLE_AUTH === '1';
 /** Only follow same-site paths after log-in, never another domain. */
 function safeNext(raw: string | null): string {
   return raw && raw.startsWith('/') && !raw.startsWith('//') ? raw : '/account';
+}
+
+/**
+ * Google's own button (the Google window then shows our domain). If Google's script cannot load,
+ * for example because of a blocker, it falls back to the redirect button.
+ */
+function GoogleButton({ fallback, onError }: { fallback: () => void; onError: (m: string) => void }) {
+  const box = useRef<HTMLDivElement>(null);
+  const [failed, setFailed] = useState(!GOOGLE_CLIENT_ID || !supabase);
+  useEffect(() => {
+    const el = box.current;
+    if (failed || !el) return;
+    renderGoogleButton(el, Math.min(400, Math.max(200, Math.round(el.getBoundingClientRect().width))), onError).catch(() => setFailed(true));
+  }, [failed, onError]);
+  if (failed) return <RedirectGoogleButton onClick={fallback} />;
+  return <div ref={box} className="flex min-h-11 w-full justify-center" data-testid="google-button" />;
+}
+
+function RedirectGoogleButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 font-semibold text-ink hover:border-slate-400">
+      <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
+        <path fill="#4285F4" d="M22.5 12.3c0-.8-.1-1.5-.2-2.2H12v4.2h5.9a5 5 0 0 1-2.2 3.3v2.7h3.5c2.1-1.9 3.3-4.7 3.3-8z" />
+        <path fill="#34A853" d="M12 23c3 0 5.4-1 7.2-2.7l-3.5-2.7c-1 .7-2.2 1.1-3.7 1.1-2.9 0-5.3-1.9-6.2-4.5H2.2v2.8A11 11 0 0 0 12 23z" />
+        <path fill="#FBBC05" d="M5.8 14.2a6.6 6.6 0 0 1 0-4.3V7.1H2.2a11 11 0 0 0 0 9.9z" />
+        <path fill="#EA4335" d="M12 5.4c1.6 0 3 .6 4.2 1.6l3.1-3.1A11 11 0 0 0 2.2 7.1l3.6 2.8C6.7 7.3 9.1 5.4 12 5.4z" />
+      </svg>
+      Continue with Google
+    </button>
+  );
 }
 
 /**
@@ -100,15 +131,7 @@ export default function AuthPage({ mode }: { mode: 'signup' | 'login' }) {
             <form onSubmit={(e) => void submit(e)} className="mt-6 space-y-3">
               {(googleEnabled || !accountsEnabled) && (
                 <>
-              <button type="button" onClick={() => void google()} className="flex w-full items-center justify-center gap-2 rounded-lg border border-slate-300 px-4 py-2.5 font-semibold text-ink hover:border-slate-400">
-                <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden>
-                  <path fill="#4285F4" d="M22.5 12.3c0-.8-.1-1.5-.2-2.2H12v4.2h5.9a5 5 0 0 1-2.2 3.3v2.7h3.5c2.1-1.9 3.3-4.7 3.3-8z" />
-                  <path fill="#34A853" d="M12 23c3 0 5.4-1 7.2-2.7l-3.5-2.7c-1 .7-2.2 1.1-3.7 1.1-2.9 0-5.3-1.9-6.2-4.5H2.2v2.8A11 11 0 0 0 12 23z" />
-                  <path fill="#FBBC05" d="M5.8 14.2a6.6 6.6 0 0 1 0-4.3V7.1H2.2a11 11 0 0 0 0 9.9z" />
-                  <path fill="#EA4335" d="M12 5.4c1.6 0 3 .6 4.2 1.6l3.1-3.1A11 11 0 0 0 2.2 7.1l3.6 2.8C6.7 7.3 9.1 5.4 12 5.4z" />
-                </svg>
-                Continue with Google
-              </button>
+              <GoogleButton fallback={() => void google()} onError={setError} />
               <div className="flex items-center gap-3 text-xs text-slate-400">
                 <span className="h-px flex-1 bg-slate-200" />
                 or
