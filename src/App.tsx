@@ -15,6 +15,7 @@ import AccountPage from './pages/AccountPage';
 import TeamPage from './pages/TeamPage';
 import AssessmentPage from './pages/AssessmentPage';
 import Pl300ReviewPage from './pages/Pl300ReviewPage';
+import AuthConfirmPage from './pages/AuthConfirmPage';
 import { useAccount } from './lib/account';
 // Registers progress sync with the account (copies progress to and from Supabase).
 import './lib/sync';
@@ -45,6 +46,7 @@ export default function App() {
         <Route path="/power-bi-assessment-test" element={<AssessmentPage />} />
         <Route path="/signup" element={<AuthPage mode="signup" />} />
         <Route path="/login" element={<AuthPage mode="login" />} />
+        <Route path="/auth/confirm" element={<AuthConfirmPage />} />
         <Route path="/account" element={<AccountPage />} />
         <Route path="/team" element={<TeamPage />} />
         <Route path="/terms" element={<LegalPage kind="terms" />} />
