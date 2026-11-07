@@ -73,6 +73,15 @@ export function isLive(e: Pick<EntitlementRow, 'status' | 'current_period_end'> 
   return !e.current_period_end || new Date(e.current_period_end).getTime() > now;
 }
 
+/**
+ * A PL-300 pass after one purchase of it is fully refunded: that purchase's days come off the end
+ * (so an earlier, still-paid extension survives), and access stops if nothing is left.
+ */
+export function afterPl300Refund(e: Pick<EntitlementRow, 'status' | 'current_period_end'>, now = Date.now()): Pick<EntitlementRow, 'status' | 'current_period_end'> {
+  const end = e.current_period_end ? new Date(e.current_period_end).getTime() - PL300_DAYS * 86_400_000 : now;
+  return end > now ? { status: e.status, current_period_end: new Date(end).toISOString() } : { status: 'refunded', current_period_end: new Date(now).toISOString() };
+}
+
 // ---------------- Enterprise / team plans (sold by invoice, created with scripts/team-admin.mjs) ----------------
 
 export interface TeamRow {

@@ -31,7 +31,7 @@ who has access in the `entitlements` table. Without the env vars below the site 
 and the paid buttons show "Coming soon".
 
 - `api/checkout.ts`: creates a Checkout page for `pro-year`, `pro-month` or `pl300`.
-- `api/stripe-webhook.ts`: listens for `checkout.session.completed`, `customer.subscription.updated` and `customer.subscription.deleted`.
+- `api/stripe-webhook.ts`: listens for `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted` and `charge.refunded` (a fully refunded PL-300 purchase takes its days back; to refund Pro, cancel the subscription immediately with a refund).
 - `api/portal.ts`: opens the Stripe customer portal (invoices, card, cancel).
 - `src/lib/account.ts`: the signed-in user and their plan; `hasPro()` / `hasPl300()` in `src/lib/access.ts` read it.
 
@@ -43,7 +43,7 @@ Setup:
 3. Run `scripts/stripe-setup.sh` to create the products and prices (lookup keys `pro_yearly`, `pro_monthly`, `pl300_prep`).
    In the Stripe dashboard, save the customer portal settings once (Settings → Billing → Customer portal).
 4. Local webhooks: `stripe listen --forward-to localhost:5173/api/stripe-webhook`, and put the `whsec_...` it prints in `.env.local`.
-5. Production: add the same env vars in Vercel, and create a webhook endpoint at `https://<your-domain>/api/stripe-webhook` with the three events above.
+5. Production: add the same env vars in Vercel, and create a webhook endpoint at `https://<your-domain>/api/stripe-webhook` with the four events above.
 
 Test card: `4242 4242 4242 4242`, any future date, any CVC.
 

@@ -1,10 +1,10 @@
 import type Stripe from 'stripe';
-import { PL300_DAYS, admin, entitlementOf, isLive, json, stripe, teamFieldsFrom } from './_lib.js';
+import { PL300_DAYS, admin, afterPl300Refund, entitlementOf, isLive, json, stripe, teamFieldsFrom } from './_lib.js';
 import type { EntitlementRow } from './_lib.js';
 
 /**
  * POST /api/stripe-webhook: Stripe tells us about payments here, and we record who has access.
- * Events to enable on the endpoint: checkout.session.completed, customer.subscription.updated, customer.subscription.deleted.
+ * Events to enable on the endpoint: checkout.session.completed, customer.subscription.updated, customer.subscription.deleted, charge.refunded.
  */
 export async function POST(req: Request): Promise<Response> {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -33,6 +33,9 @@ export async function POST(req: Request): Promise<Response> {
       if (userId) await saveSubscription(userId, sub);
       break;
     }
+    case 'charge.refunded':
+      await onRefund(event.data.object);
+      break;
   }
   return json({ received: true });
 }
@@ -70,6 +73,22 @@ async function onCheckout(session: Stripe.Checkout.Session): Promise<void> {
       stripe_customer_id: idOf(session.customer) ?? current?.stripe_customer_id ?? null,
       stripe_subscription_id: null,
     });
+  }
+}
+
+/**
+ * A fully refunded PL-300 purchase takes its days back. Pro refunds are handled by cancelling the
+ * subscription in Stripe (Cancel → Immediately, with refund), which arrives as customer.subscription.deleted.
+ */
+async function onRefund(charge: Stripe.Charge): Promise<void> {
+  if (!charge.refunded) return; // partial refund: keep access
+  const customerId = idOf(charge.customer);
+  if (!customerId) return;
+  const { data, error } = await admin().from('entitlements').select('*').eq('stripe_customer_id', customerId).eq('plan', 'pl300');
+  if (error) throw error;
+  for (const row of (data ?? []) as EntitlementRow[]) {
+    if (!isLive(row)) continue;
+    await upsert({ ...row, ...afterPl300Refund(row) });
   }
 }
 
